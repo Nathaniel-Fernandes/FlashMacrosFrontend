@@ -10,7 +10,7 @@ const SignInScreen = () => {
     const navigation = useNavigation();
 
     return (
-        <View>
+        <View style={{marginTop: 60}}>
             <View style={{justifyContent: 'center', alignItems: 'center', marginVertical: 20}}>
                 <Image
                     source={require('../../assets/logo.png')}
@@ -63,6 +63,7 @@ const SignInScreen = () => {
                 <Button 
                     title="Sign In"
                     color={defaultColors.red.color}
+                    disabled={username.length === 0 || password.length === 0}
                     onPress={() => navigation.navigate('Home')}
                 ></Button>
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Text, TextInput, View, Button } from "react-native";
+import { Text, TextInput, View, Button, Image } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { defaultColors } from '../styles/styles';
 import { useNavigation } from '@react-navigation/native'
@@ -7,12 +7,24 @@ import { useNavigation } from '@react-navigation/native'
 const SignUpScreen = () => {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
+    const [isValid, setIsValid] = useState(true) // TODO: make validate 
     const [agreed, setAgreed] = useState(false)
 
     const navigation = useNavigation();
 
     return (
-        <View style={{marginHorizontal: 20, marginVertical: 25}}>
+        <View style={{marginHorizontal: 20, marginVertical: 25, marginTop: 60}}>
+            <View style={{justifyContent: 'center', alignItems: 'center', marginVertical: 20}}>
+                <Image
+                    source={require('../../assets/logo.png')}
+                    style={{
+                        width: 100,
+                        height: 100,
+                        borderRadius: 13
+                    }}
+                />
+                <Text style={{...defaultColors.black, fontWeight: 800 }}>Flash Macros</Text>
+            </View>
             <Text style={{...defaultColors.black, fontSize: 28, fontWeight: 800}}>Sign Up</Text>
 
             <View style={{marginVertical: 20}}>
@@ -60,10 +72,10 @@ const SignUpScreen = () => {
             </View>
 
             {/* TODO: see if it's possible to change background color */}
-            <Button 
+            <Button
                 title="Continue"
                 color={defaultColors.red.color}
-                disabled={!agreed}
+                disabled={!agreed || !isValid}
                 onPress={() => navigation.navigate('Home')}
             ></Button>
 

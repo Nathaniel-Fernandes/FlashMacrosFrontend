@@ -15,6 +15,7 @@ import MealScreen from './src/screens/MealScreen'
 import ReportScreen from './src/screens/ReportScreen'
 import SignInScreen from './src/screens/SignInScreen'
 import SignUpScreen from './src/screens/SignUpScreen'
+import ProfileScreen from './src/screens/ProfileScreen'
 
 const Drawer = createDrawerNavigator()
 
@@ -148,10 +149,11 @@ export default function App() {
             drawerActiveTintColor: defaultColors.red.color,
           }}
         >
-          {/* TODO: remove "sign in's header " */}
-          <Drawer.Screen name="Sign In" component={SignInScreen} />
+          <Drawer.Screen name="Report" component={ReportScreen} />
+          <Drawer.Screen options={{headerShown: false, swipeEnabled: false, drawerItemStyle: { height: 0 }}} name="Sign In" component={SignInScreen} />
           {/* TODO: remove sign up's header */}
-          <Drawer.Screen name="Sign Up" component={SignUpScreen} />
+          <Drawer.Screen options={{headerShown: false, swipeEnabled: false, drawerItemStyle: { height: 0 }}} name="Sign Up" component={SignUpScreen} />
+          
           <Drawer.Screen name="Data" component={DataScreen} />
           <Drawer.Screen name="Home" component={HomeScreen} />
             <Drawer.Screen 
@@ -164,7 +166,7 @@ export default function App() {
               }}
             name="Meals" component={MealScreen} />
 
-          <Drawer.Screen name="Report" component={ReportScreen} />
+          <Drawer.Screen name="Profile" component={ProfileScreen} />
         </Drawer.Navigator>
         
         <Modal
