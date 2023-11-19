@@ -149,7 +149,6 @@ export default function App() {
             drawerActiveTintColor: defaultColors.red.color,
           }}
         >
-          <Drawer.Screen name="Report" component={ReportScreen} />
           <Drawer.Screen options={{headerShown: false, swipeEnabled: false, drawerItemStyle: { height: 0 }}} name="Sign In" component={SignInScreen} />
           {/* TODO: remove sign up's header */}
           <Drawer.Screen options={{headerShown: false, swipeEnabled: false, drawerItemStyle: { height: 0 }}} name="Sign Up" component={SignUpScreen} />
@@ -165,7 +164,7 @@ export default function App() {
                   >+</Text>)
               }}
             name="Meals" component={MealScreen} />
-
+          <Drawer.Screen name="Report" component={ReportScreen} />
           <Drawer.Screen name="Profile" component={ProfileScreen} />
         </Drawer.Navigator>
         
