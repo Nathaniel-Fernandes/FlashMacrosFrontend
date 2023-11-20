@@ -1,8 +1,14 @@
 import React from "react";
-import { Text } from "react-native";
+import { Text, View } from "react-native";
 
 const DataScreen = () => {
-    return <Text>Data Screen</Text>
+    return (
+    <View style={{backgroundColor: '#FFF', height: '100%'}}>
+        <View>
+            <Text>Data Screen</Text>
+        </View>
+    </View>
+    ) 
 }
 
 export default DataScreen

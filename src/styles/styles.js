@@ -4,6 +4,9 @@ const defaultColors = StyleSheet.create({
     red: {
         color: '#f85f6a'
     },
+    lightRed: {
+        color: '#f85f6a57'
+    },
     black: {
         color: '#35424a'
     },
