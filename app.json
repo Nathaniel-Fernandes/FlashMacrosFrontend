@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "FlashMacrosPt2",
-    "slug": "FlashMacrosPt2",
+    "name": "FlashMacros",
+    "slug": "FlashMacros",
+    "scheme": "myappdafadf",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
@@ -16,7 +17,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.nathanielfernandes.FlashMacrosPt2"
+      "bundleIdentifier": "com.nathanielfernandes.FlashMacros"
     },
     "android": {
       "adaptiveIcon": {
@@ -29,8 +30,11 @@
     },
     "extra": {
       "eas": {
-        "projectId": "03813ed3-9ccf-4708-b6fe-f65b537067f2"
+        "projectId": "e74fd67b-62a4-48ab-a307-52f85f2b78cc"
       }
-    }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
