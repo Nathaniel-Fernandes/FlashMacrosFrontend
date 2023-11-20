@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { Text, TextInput, View, Button, Image, ScrollView } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { defaultColors } from '../../src/styles/styles';
-import { useNavigation } from '@react-navigation/native'
 import { Link } from "expo-router";
+import PasswordValidate, {
+    VALIDATION_RULES_KEYS,
+  } from 'react-native-password-validate-checklist';
 
 const SignUpScreen = () => {
     const [username, setUsername] = useState('')
@@ -11,7 +13,14 @@ const SignUpScreen = () => {
     const [isValid, setIsValid] = useState(true) // TODO: make validate 
     const [agreed, setAgreed] = useState(false)
 
-    const navigation = useNavigation();
+    const rules = [
+        {key: VALIDATION_RULES_KEYS.MIN_LENGTH, ruleValue: 10, label: 'Should contain more than 6 letter characters'},
+        {key: VALIDATION_RULES_KEYS.MAX_LENGTH, ruleValue: 15, label: 'Should contain less than 12 letter characters'},
+        {key: VALIDATION_RULES_KEYS.LOWERCASE_LETTER},
+        {key: VALIDATION_RULES_KEYS.UPPERCASE_LETTER},
+        {key: VALIDATION_RULES_KEYS.NUMERIC},
+        {key: VALIDATION_RULES_KEYS.SPECIAL_CHARS},
+      ];
 
     return (
         <ScrollView
@@ -47,13 +56,11 @@ const SignUpScreen = () => {
                 ></TextInput>
             </View>
 
-            {/* TODO: add input validation for password on frontend */}
-            {/* TODO: add input validation for password on server */}
             <View>
                 <Text style={{...defaultColors.red, fontWeight: 800}}>Password</Text>
                 <TextInput
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={e => {setPassword(e), setIsValid(false)}}
                 placeholder="******"
                 style={{
                     color: defaultColors.lightGray,
@@ -63,6 +70,12 @@ const SignUpScreen = () => {
                     borderBottomWidth: 1
                 }}></TextInput>
             </View>
+
+            {password.length > 0 && !isValid ? <PasswordValidate
+                newPassword={password}
+                validationRules={rules}
+                onPasswordValidateChange={setIsValid}
+            /> : ''}
 
             <View style={{marginVertical: 20}}>
                 {/* TODO: add link to Terms of Service */}
