@@ -3,7 +3,7 @@ import { Text, View, Image, TextInput, Button, ScrollView } from "react-native";
 import { defaultColors } from '../../src/styles/styles';
 import { Link } from "expo-router"
 
-const SignInScreen = () => {
+const ForgotPassword = () => {
     const [username, setUsername] = useState('')
 
     return (
@@ -40,6 +40,7 @@ const SignInScreen = () => {
                     ></TextInput>
                 </View>
 
+                {/* TODO: send message to user that an email has been sent */}
                 <Link
                     href={'/'}
                     asChild
@@ -69,4 +70,4 @@ const SignInScreen = () => {
     )
 }
 
-export default SignInScreen
+export default ForgotPassword

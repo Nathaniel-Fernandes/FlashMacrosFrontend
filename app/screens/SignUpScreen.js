@@ -65,25 +65,31 @@ const SignUpScreen = () => {
             </View>
 
             <View style={{marginVertical: 20}}>
-                {/* TODO: BUGFIX make on same line */}
                 {/* TODO: add link to Terms of Service */}
                 {/* TODO: add link to Privacy policy */}
                 <BouncyCheckbox
                     isChecked={agreed}
                     fillColor={defaultColors.red.color}
-                    onPress={setAgreed}></BouncyCheckbox>
-                <Text>I agree to the Terms of Service and Privacy Policy.</Text>
+                    onPress={setAgreed}
+                    text="I agree to the Terms of Service and Privacy Policy."
+                    textStyle={{
+                        textDecorationLine: "none",
+                      }}   
+                >
+                </BouncyCheckbox>
             </View>
 
-            {/* TODO: see if it's possible to change background color */}
-            <Button
-                title="Continue"
-                color={defaultColors.red.color}
-                disabled={!agreed || !isValid}
-                onPress={() => navigation.navigate('Home')}
-            ></Button>
+            <Link
+                href={'/screens/HomeScreen'}
+                asChild
+            >
+                <Button
+                    title="Continue"
+                    color={defaultColors.red.color}
+                    disabled={!agreed || !isValid}
+                ></Button>
+            </Link>
 
-            {/* TODO: add link from Sign In to signin page */}
             <Text style={{...defaultColors.darkGray, marginVertical: 15}}>
                 Have an Account?
                 <Link

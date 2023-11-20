@@ -1,14 +1,11 @@
 import React, { useState } from "react";
 import { Text, View, Image, TextInput, Button, ScrollView } from "react-native";
 import { defaultColors } from '../src/styles/styles';
-import { useNavigation } from '@react-navigation/native'
 import { Link } from "expo-router"
 
 const SignInScreen = () => {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
-
-    const navigation = useNavigation();
 
     return (
         <ScrollView style={{marginTop: 60}} keyboardShouldPersistTaps='handled'>
