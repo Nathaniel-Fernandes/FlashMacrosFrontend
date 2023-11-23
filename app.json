@@ -28,13 +28,27 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "e74fd67b-62a4-48ab-a307-52f85f2b78cc"
-      }
-    },
     "plugins": [
-      "expo-router"
-    ]
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Flash Macros to access your camera."
+        }
+      ],
+      ["react-native-vision-camera",
+      {
+        "cameraPermission": "Allow Flash Macros to access your camera.",
+        "enableMicrophonePermission": false
+      }]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "e30cc337-803f-4d28-af23-7d23b3d8eb6e"
+      }
+    }
   }
 }

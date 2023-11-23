@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { FlatList, View, Text, Image, ImageBackground } from "react-native";
 
 import { defaultColors } from "../../src/styles/styles";
-import { MealPayload } from "../../src/context";
+import { MealContext } from "../../src/context";
 
 // TODO: add + button to header
 // TODO: create modal for adding a new meal that has the following fields: title, description, Calories, Protein, Fat, Carbs, img
@@ -62,7 +62,7 @@ const Meal = (props) => {
 }
 
 const MealScreen = () => {
-    const payload = useContext(MealPayload)
+    const mealHelpers = useContext(MealContext)
 
     return (
         // TODO: add calendar icon to header
@@ -74,7 +74,7 @@ const MealScreen = () => {
                 {/* TODO: add search bar that searches for food */}
                 {/* TODO: add list rendering view to not hard-coded */}
                 <FlatList
-                    data={payload}
+                    data={mealHelpers.data}
                     renderItem={(item) => Meal(item)}
                 />
             </View>
