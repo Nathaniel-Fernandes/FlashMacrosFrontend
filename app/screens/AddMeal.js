@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { StyleSheet, Text, Modal, View, TextInput, Button, Alert, TouchableOpacity, ImageBackground, ScrollView } from 'react-native';
 import { defaultColors } from '../../src/styles/styles';
 import { useNavigation } from 'expo-router';
@@ -15,11 +15,16 @@ const AddMealModal = () => {
     const [mealTags, setMealTags] = useState('')
 
     const [openCamera, setOpenCamera] = useState(false)
+    const [imgFilePath, setImgFilePath] = useState('')
+
+    useEffect(() => {
+        console.log('hii: ', imgFilePath)
+    }, [imgFilePath])
 
     const closeModal = () => {
         setMealDescription('')
         setMealTags('')
-        // setCapturedImage(null)
+        setImgFilePath('')
         navigation.navigate('screens/MealScreen')
     }
 
@@ -34,7 +39,7 @@ const AddMealModal = () => {
                 'Carbs': 50
             },
             'tags': mealTags.split(','),
-            // 'img': capturedImage.uri // TODO: save images to file storage system
+            'img': imgFilePath // TODO: save images to file storage system
         }
 
         mealHelpers.addMeal(meal)
@@ -42,7 +47,7 @@ const AddMealModal = () => {
 
     return (
         // TODO: add screen transition animations by making this a modal in the MealScreen
-        <View style={{ height: '100%', padding: 5 }}>
+        <View style={{ height: '100%', padding: 5, backgroundColor: '#fff' }}>
             <ScrollView style={{ marginVertical: 50, marginHorizontal: 20 }} contentContainerStyle={{ display: 'flex', flexDirection: 'column' }}>
                 <Text style={{ ...defaultColors.black, fontSize: 28, fontWeight: 800 }}>Add new meal</Text>
 
@@ -78,17 +83,40 @@ const AddMealModal = () => {
                     ></TextInput>
                 </View>
 
-                <View style={{ backgroundColor: 'red', height: '160%' }}>
                 {
                     openCamera ?
-                        <Camera />
+                        <Modal>
+                            <Camera setOpenCamera={setOpenCamera} setImgFilePath={setImgFilePath} />
+                        </Modal>
                         : <Button
-                            title="Add a photo?"
+                            title = {(imgFilePath === '') ? "Add a photo?" : "Retake photo"}
                             color={defaultColors.red.color}
                             onPress={() => setOpenCamera(true)}
                         ></Button>
                 }
-                </View>
+
+                {
+                imgFilePath === '' ? '' :
+                    typeof(imgFilePath) === typeof('') ?
+                    <ImageBackground
+                        src={imgFilePath}
+                        style={{
+                            width: 415*9/16,
+                            height: 415,
+                            marginTop: 10,
+                            alignSelf: 'center',
+                            marginBottom: 5
+                        }}
+                    ></ImageBackground> : 
+                    <Image
+                        source={imgFilePath}
+                        style={{
+                            width: 415*9/16,
+                            height: 415,
+                            marginTop: 10
+                        }}
+                    />
+                }
 
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <Button

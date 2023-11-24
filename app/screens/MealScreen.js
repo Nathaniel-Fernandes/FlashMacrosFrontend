@@ -1,20 +1,21 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { FlatList, View, Text, Image, ImageBackground } from "react-native";
 
 import { defaultColors } from "../../src/styles/styles";
 import { MealContext } from "../../src/context";
+import { useSafeAreaFrame } from "react-native-safe-area-context";
+import { TextInput } from "react-native-gesture-handler";
 
 // TODO: add + button to header
 // TODO: create modal for adding a new meal that has the following fields: title, description, Calories, Protein, Fat, Carbs, img
 // TODO: use camera for modal
 // TODO: save picture to local storage
 const Meal = (props) => {
-    console.log(typeof(props.item.img))
+    console.log(props.item.img, props.item.img == undefined)
     let CMNP = props.item.CMNP
-    console.log(CMNP)
 
     return (
-        <View style={{ borderBottomColor: defaultColors.black.color, borderBottomWidth: 1, marginBottom: 20, paddingBottom: 10 }}>
+        <View style={{ borderBottomColor: defaultColors.black.color, borderBottomWidth: 1, marginBottom: 10, paddingBottom: 10 }}>
             <Text style={{...defaultColors.black, fontSize: 16, fontWeight: 800}}>{props.item.title}</Text>
             
             {props.item?.description?.length > 0 ?
@@ -38,24 +39,25 @@ const Meal = (props) => {
             }
 
             {
-            (typeof(props.item.img) === typeof('')) ?
-                <ImageBackground
-                    src={props.item.img}
-                    // source={props.item.img}
-                    style={{
-                        width: 200,
-                        height: 150,
-                        marginTop: 10
-                    }}
-                ></ImageBackground> : 
-                <Image
-                    source={props.item.img}
-                    style={{
-                        width: 200,
-                        height: 150,
-                        marginTop: 10
-                    }} 
-                />
+            (props.item.img == '' || props.item.img == undefined) ? '' :
+                typeof(props.item.img) === typeof('') ?
+                    <ImageBackground
+                        src={props.item.img}
+                        style={{
+                            width: 200,
+                            height: 150,
+                            marginTop: 10,
+                            backgroundColor: 'blue'
+                        }}
+                    ></ImageBackground> : 
+                    <Image
+                        source={props.item.img}
+                        style={{
+                            width: 200,
+                            height: 150,
+                            marginTop: 10
+                        }} 
+                    />
             }
         </View>
     )
@@ -64,19 +66,60 @@ const Meal = (props) => {
 const MealScreen = () => {
     const mealHelpers = useContext(MealContext)
 
+    console.log(mealHelpers.data)
+    const [ mealsToRender, setMealsToRender ] = useState(mealHelpers.data)
+    const [ search, setSearch ] = useState('')
+
+    useEffect(() => {
+        let searchLower = search.toLowerCase()
+
+        if (searchLower === '') {
+            setMealsToRender(mealHelpers.data)
+        }
+        else {
+            let filtered = mealHelpers.data.filter((mealObj) => {
+                if (mealObj['description'].toLowerCase().includes(searchLower)) {
+                    return true
+                }
+                if (mealObj['title'].toLowerCase().includes(searchLower)) {
+                    return true
+                }
+                if (mealObj['tags'].some((tag) => tag.toLowerCase().includes(searchLower))) {
+                    return true
+                }
+
+                return false
+            })
+
+            setMealsToRender(filtered)
+        }
+    }, [search])
+
     return (
         // TODO: add calendar icon to header
-        // TODO: add "add meal +" to top
-        // TODO: make meal save locally to device
-
         <View style={{ backgroundColor: '#FFF', height: '100%' }}>
-            <View style={{padding: 20}}>
-                {/* TODO: add search bar that searches for food */}
-                {/* TODO: add list rendering view to not hard-coded */}
-                <FlatList
-                    data={mealHelpers.data}
-                    renderItem={(item) => Meal(item)}
-                />
+            <View style={{ backgroundColor: '#FFF', height: '90%' }}>
+                <TextInput
+                    placeholder="Search"
+                    style={{
+                        backgroundColor: defaultColors.superLightGray.color,
+                        padding: 10,
+                        borderRadius: 10,
+                        margin: 10,
+                    }}
+                    value={search}
+                    onChangeText={setSearch}
+                ></TextInput>
+                <View style={{
+                    padding: 10,
+                    paddingTop: 0,
+                }}>
+                    {/* TODO: add list rendering view to not hard-coded */}
+                    <FlatList
+                        data={mealsToRender}
+                        renderItem={(item) => Meal(item)}
+                    />
+                </View>
             </View>
         </View>
     )

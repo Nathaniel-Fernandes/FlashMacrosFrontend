@@ -17,7 +17,8 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.nathanielfernandes.FlashMacros"
+      "bundleIdentifier": "com.nathanielfernandes.FlashMacros",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -40,7 +41,8 @@
       {
         "cameraPermission": "Allow Flash Macros to access your camera.",
         "enableMicrophonePermission": false
-      }]
+      }],
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "router": {

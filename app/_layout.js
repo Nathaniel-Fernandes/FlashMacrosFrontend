@@ -5,6 +5,11 @@ import { Text } from 'react-native';
 import { DummyData, MealContext } from "../src/context";
 import { useNavigation } from 'expo-router/';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Settings } from 'react-native-fbsdk-next';
+
+// Ask for consent first if necessary
+// Possibly only do this for iOS if no need to handle a GDPR-type flow
+Settings.initializeSDK();
 
 export default function Layout() {
     const navigation = useNavigation()

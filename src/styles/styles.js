@@ -13,6 +13,9 @@ const defaultColors = StyleSheet.create({
     lightGray: {
         color: '#d1d6db'
     },
+    superLightGray: {
+        color: '#e4eaf0'
+    },
     darkGray: {
         color: '#a0a0a0'
     },
