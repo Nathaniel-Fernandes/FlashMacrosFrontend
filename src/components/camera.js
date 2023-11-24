@@ -25,23 +25,25 @@ const CameraComponent = (props) => {
     // Every time the `cameraPermission` changes, retest to see if we have access to use the camera
     useEffect(() => {
         const handlePermissionChange = async () => {
-            if (cameraPermission === 'granted') {
-                setShowCamera(true)
-            }
-            else if (cameraPermission === 'not-determined') {
-                setCameraPermission(await Camera.requestCameraPermission())
-            }
-            else if (cameraPermission === 'denied') {
-                // TODO: handle errors higher up, potentially with permissions context
-                setError(true)
-                Alert.alert("Access to camera denied... :(")
-            }
-            else if (cameraPermission === 'restricted') {
-                setError(true)
-                Alert.alert("Access to camera denied... :(")
-            }
-            else {
-                console.log('error: API might have changed')
+            if (cameraPermission != null) {
+                if (cameraPermission === 'granted') {
+                    setShowCamera(true)
+                }
+                else if (cameraPermission === 'not-determined') {
+                    setCameraPermission(await Camera.requestCameraPermission())
+                }
+                else if (cameraPermission === 'denied') {
+                    // TODO: handle errors higher up, potentially with permissions context
+                    setError(true)
+                    Alert.alert("Access to camera denied... :(", cameraPermission)
+                }
+                else if (cameraPermission === 'restricted') {
+                    setError(true)
+                    Alert.alert("Access to camera denied... :(", cameraPermission)
+                }
+                else {
+                    console.log('error: API might have changed', cameraPermission)
+                }
             }
         }
 

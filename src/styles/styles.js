@@ -8,7 +8,7 @@ const defaultColors = StyleSheet.create({
         color: '#f85f6a57'
     },
     black: {
-        color: '#35424a'
+        color: '#000'
     },
     lightGray: {
         color: '#d1d6db'

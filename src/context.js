@@ -12,7 +12,11 @@ const DummyMeals = [
           'Carbs': 56
       },
       'tags': ['Salmon', 'Corn', 'Mashed Potatoes'],
-      'imgURI': require('../assets/salmon.jpg')
+      'img': {
+        'URI': require('../assets/salmon.jpg'),
+        'width': 4032,
+        'height': 3024
+      }
   },
   {
       'title': '10/13/2023 12:01 PM',
@@ -24,7 +28,11 @@ const DummyMeals = [
           'Carbs': 37
         },
       'tags': [],
-      'imgURI': require('../assets/cheftai.jpg')
+      'img': {
+        'URI': require('../assets/cheftai.jpg'),
+        'width': 3024,
+        'height': 2830
+      }
   }
 ]
 

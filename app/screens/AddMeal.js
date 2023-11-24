@@ -1,11 +1,11 @@
 import React, { useContext, useState, useEffect } from 'react'
-import { StyleSheet, Text, Modal, View, TextInput, Button, ImageBackground, ScrollView } from 'react-native';
+import { Text, Modal, View, TextInput, Button, ImageBackground, ScrollView } from 'react-native';
 import { defaultColors } from '../../src/styles/styles';
 import { useNavigation } from 'expo-router';
 import { MealContext } from '../../src/context';
 import { format } from 'date-fns'
 import Camera from '../../src/components/camera';
-import * as MediaLibrary from 'expo-media-library'; 
+import * as MediaLibrary from 'expo-media-library';
 
 const AddMealModal = () => {
     const navigation = useNavigation()
@@ -34,6 +34,8 @@ const AddMealModal = () => {
 
         if (mediaLibraryPermission['status'] === 'granted') {
             await MediaLibrary.createAssetAsync(imgTempURI).then((asset) => {
+                console.log('asset: ', asset)
+
                 const meal = {
                     'title': format(new Date(), 'MM/dd/yyyy p'),
                     'description': mealDescription,
@@ -44,8 +46,12 @@ const AddMealModal = () => {
                         'Carbs': 50
                     },
                     'tags': mealTags.split(','),
-                    'imgURI': asset.uri,
-                }    
+                    'img': {
+                        'URI': asset.uri,
+                        'width': asset.width,
+                        'height': asset.height
+                    }
+                }
                 mealHelpers.addMeal(meal)
             })
         }
@@ -95,33 +101,34 @@ const AddMealModal = () => {
                             <Camera setOpenCamera={setOpenCamera} setImgTempURI={setImgTempURI} />
                         </Modal>
                         : <Button
-                            title = {(imgTempURI === '') ? "Add a photo?" : "Retake photo"}
-                            color={defaultColors.red.color}
+                            title={(imgTempURI === '') ? "Add Photo" : "Retake photo"}
+                            color={defaultColors.blue.color}
                             onPress={() => setOpenCamera(true)}
                         ></Button>
                 }
 
                 {
-                imgTempURI === '' ? '' :
-                    typeof(imgTempURI) === typeof('') ?
-                    <ImageBackground
-                        src={imgTempURI}
-                        style={{
-                            width: 415*9/16, // 9:16 aspect ratio
-                            height: 415,
-                            marginTop: 10,
-                            alignSelf: 'center',
-                            marginBottom: 5
-                        }}
-                    ></ImageBackground> : 
-                    <Image
-                        source={imgTempURI}
-                        style={{
-                            width: 415*9/16,
-                            height: 415,
-                            marginTop: 10
-                        }}
-                    />
+                    // TODO:
+                    imgTempURI === '' ? '' :
+                        typeof (imgTempURI) === typeof ('') ?
+                            <ImageBackground
+                                src={imgTempURI}
+                                style={{
+                                    width: 415 * 9 / 16, // 9:16 aspect ratio
+                                    height: 415,
+                                    marginTop: 10,
+                                    alignSelf: 'center',
+                                    marginBottom: 5
+                                }}
+                            ></ImageBackground> :
+                            <Image
+                                source={imgTempURI}
+                                style={{
+                                    width: 415 * 9 / 16,
+                                    height: 415,
+                                    marginTop: 10
+                                }}
+                            />
                 }
 
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -129,6 +136,7 @@ const AddMealModal = () => {
                         title="Save"
                         color={defaultColors.blue.color}
                         onPress={() => { saveMeal(), closeModal() }} // TODO: save modal data
+                        disabled={imgTempURI === ''}
                     ></Button>
                     <Button
                         title="Cancel"
