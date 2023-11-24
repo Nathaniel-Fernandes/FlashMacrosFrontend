@@ -1,26 +1,28 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { View, TouchableOpacity, useWindowDimensions, StyleSheet, Text, Image } from 'react-native'
+import { View, TouchableOpacity, StyleSheet, Text, Image } from 'react-native'
 import { Camera, NoCameraDeviceError, useCameraDevice } from 'react-native-vision-camera'
 import { defaultColors } from '../styles/styles'
 
 const CameraComponent = (props) => {
-    console.log(props)
-    const [cameraPermission, setCameraPermission] = useState(null)
-    const [showCamera, setShowCamera] = useState(false)
+    // 1. Set up variables needed to use the camera
+    const device = useCameraDevice('back')
+    const camera = useRef(null);
+
     const [error, setError] = useState(false)
+    const [showCamera, setShowCamera] = useState(false)
+    const [imgTempURI, setImgTempURI] = useState('');
 
-    // const [type, setType] = useState(CameraType.back)
-    const [imageSource, setImageSource] = useState('');
-
-    // get the permissions - runs one time on start up
+    // 2. Get user's permission to use the Camera + Media Library
+    const [cameraPermission, setCameraPermission] = useState(null)
+    
+    // Ask for permissions 1x on component start up
     useEffect(() => {
-        const getPermissions = async () => {
+        (async () => {
             setCameraPermission(await Camera.getCameraPermissionStatus())
-        }
-
-        getPermissions()
+        })()
     }, [])
 
+    // Every time the `cameraPermission` changes, retest to see if we have access to use the camera
     useEffect(() => {
         const handlePermissionChange = async () => {
             if (cameraPermission === 'granted') {
@@ -30,7 +32,8 @@ const CameraComponent = (props) => {
                 setCameraPermission(await Camera.requestCameraPermission())
             }
             else if (cameraPermission === 'denied') {
-                setError(true) // TODO: handle these higher up
+                // TODO: handle errors higher up, potentially with permissions context
+                setError(true)
                 Alert.alert("Access to camera denied... :(")
             }
             else if (cameraPermission === 'restricted') {
@@ -45,21 +48,21 @@ const CameraComponent = (props) => {
         handlePermissionChange()
     }, [cameraPermission])
 
-    const device = useCameraDevice('back')
-    const camera = useRef(null);
-
+    // 3. helper functions to take the photo & send results to parent component (i.e., AddMeals component)
     const capturePhoto = async () => {
         if (camera.current !== null) {
-            const photo = await camera.current.takePhoto({});
-            console.log(photo)
-            setImageSource(photo.path);
+            const photo = await camera.current.takePhoto({
+                enableShutterSound: false
+            });
+            setImgTempURI(photo.path);
             setShowCamera(false);
-            console.log(photo.path);
         }
     };
 
+    // The parent AddMeals component sends 2 f(x) via props, that allow this component (the child) to mutate state in the parent's scope
     const savePhoto = () => {
-        props.setImgFilePath(imageSource)
+        console.log('child: tempImgURI: ', imgTempURI)
+        props.setImgTempURI(imgTempURI)
         props.setOpenCamera(false)
     }
 
@@ -76,6 +79,7 @@ const CameraComponent = (props) => {
                             device={device}
                             isActive={showCamera}
                             photo={true}
+                            enableZoomGesture={true}
                         />
 
                         <View style={styles.backButton}>
@@ -106,11 +110,11 @@ const CameraComponent = (props) => {
                     </>
                 ) : (
                     <>
-                        {imageSource !== '' ? (
+                        {imgTempURI !== '' ? (
                             <Image
                                 style={styles.image}
                                 source={{
-                                    uri: `file://'${imageSource}`,
+                                    uri: `file://'${imgTempURI}`,
                                 }}
                             />
                         ) : null}
@@ -143,7 +147,6 @@ const CameraComponent = (props) => {
                                         borderColor: defaultColors.red.color,
                                     }}
                                     onPress={savePhoto}>
-                                    {/* onPress={() => savePhoto().then(props.setOpenCamera(false))}> */}
 
                                     <Text style={{ color: defaultColors.red.color, fontWeight: '500' }}>
                                         Use Photo
@@ -205,66 +208,5 @@ const styles = StyleSheet.create({
         aspectRatio: 9 / 16,
     },
 });
-
-// const toggleCameraType = () => {
-//     setType(current => (current === CameraType.back ? CameraType.front : CameraType.back))
-// }
-
-// const takePhoto = async () => {
-//     const photo = await camera.takePictureAsync()
-
-//     setPreviewVisible(true)
-//     setCapturedImage(photo)
-//     setStartCamera(false)
-// }
-
-// const retakePhoto = () => {
-//     setCapturedImage(null)
-//     setPreviewVisible(false)
-//     startCamera()
-// }
-
-// const savePhoto = async () => {
-//     // TODO: use file system to permanently save
-// }
-
-// {/* https://www.freecodecamp.org/news/how-to-create-a-camera-app-with-expo-and-react-native/ */ }
-// return (
-//     <View>
-//         {
-//             startCamera ? <View
-//                 style={{ backgroundColor: 'blue', height: '100%' }}
-//             >
-//                 <Camera
-//                     // ratio='16:9'
-//                     style={{
-//                         height: '100%'
-//                         // width: '100%'
-//                     }}
-//                     zoom={0}
-//                     type={type}
-//                     ref={(r) => { camera = r }}
-//                 >
-//                     {/* <View style={{ alignSelf: 'center', flex: 1, alignItems: 'center' }}>
-//                             <TouchableOpacity onPress={takePhoto}
-//                                 style={{ width: 70, height: 70, bottom: 0, borderRadius: 50, backgroundColor: '#fff' }}
-//                             />
-//                         </View> */}
-//                 </Camera>
-//             </View> : ''
-//         }
-//         {/* {
-//                 (previewVisible && capturedImage && capturedImage.uri) ?
-//                     <View>
-//                         <ImageBackground
-//                             style={{ height: 300 }}
-//                             src={capturedImage && capturedImage.uri}
-//                         />
-//                     </View>
-//                     : ''
-//             } */}
-//     </View>
-// )
-// }
 
 export default CameraComponent

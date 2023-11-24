@@ -1,14 +1,45 @@
+// 3rd party
 import React, { useState } from "react";
 import { Text, View, Image, TextInput, Button, ScrollView, Pressable } from "react-native";
-import { defaultColors } from '../src/styles/styles';
-import { Link } from "expo-router"
+import { Link, useNavigation } from "expo-router"
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
+import { LoginButton, Settings } from 'react-native-fbsdk-next';
 
-import { LoginButton, AccessToken } from 'react-native-fbsdk-next';
+// local
+import { defaultColors } from '../src/styles/styles';
+
+GoogleSignin.configure();
+Settings.initializeSDK();
 
 const SignInScreen = () => {
+    const navigation = useNavigation()
+
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
+
+    const signInWithGoogle = async () => {
+        try {
+            // [ECEN 404 TODO]: ensure the user actually is in our DATABASE before allowing access to the app.
+            // For now, we can just assume the user has already registered and navigate to the home screen
+            const userInfo = await GoogleSignin.signIn()
+            navigation.navigate('screens/HomeScreen')
+        }
+        catch (e) {
+            console.log(e)
+        }
+    }
+
+    const signInWithFacebookCallback = (error, result) => {
+        if (error) {
+            console.log(error);
+        } else if (result.isCancelled) {
+            console.log("login is cancelled.");
+        } else {
+            // [ECEN 404 TODO]: ensure the user actually is in our DATABASE before allowing access to the app.
+            // For now, we can just assume the user has already registered and navigate to the home screen
+            navigation.navigate('screens/HomeScreen')
+        }
+    }
 
     return (
         <View style={{ backgroundColor: '#FFF', height: '100%' }}>
@@ -60,14 +91,6 @@ const SignInScreen = () => {
                             }}></TextInput>
                     </View>
 
-                    {/* TODO: see if it's possible to change background color */}
-                    {/* 
-                    <Button 
-                        title="Sign In"
-                        color={defaultColors.red.color}
-                        disabled={username.length === 0 || password.length === 0}
-                        onPress={() => navigation.navigate('Home')}
-                    ></Button> */}
                     <Link
                         href={'/screens/HomeScreen'}
                         asChild
@@ -81,20 +104,17 @@ const SignInScreen = () => {
 
                     <Text style={{ textAlign: 'center', ...defaultColors.darkGray }}>or use one of your social profiles</Text>
 
-                    {/* <View style={{ display: "flex", flexDirection: 'row' }}> */}
-                    <View style={{ 
-                        // margin: 10,
+                    <View style={{
                         display: 'flex',
                         flexDirection: 'row',
                         justifyContent: 'center',
                         alignItems: 'center',
                     }}>
-                    <GoogleSigninButton
+                        <GoogleSigninButton
                             style={{ width: 198, marginLeft: -3 }}
                             size={GoogleSigninButton.Size.Wide}
                             color={GoogleSigninButton.Color.Dark}
-                        onPress={GoogleSignin}
-                        // disabled={state.isSigninInProgress}
+                            onPress={signInWithGoogle}
                         />
 
                         <Pressable
@@ -105,36 +125,12 @@ const SignInScreen = () => {
                                 display: 'flex',
                                 justifyContent: 'center'
                             }}
-                            onPress={() => console.log('hi')} // TODO: do styling, make button press the same, etc.
                         >
                             <LoginButton
-                                onPress={() => { }}
-                            // onLoginFinished={
-                            //     (error, result) => {
-                            //         if (error) {
-                            //             console.log("login has error: " + result.error);
-                            //         } else if (result.isCancelled) {
-                            //             console.log("login is cancelled.");
-                            //         } else {
-                            //             AccessToken.getCurrentAccessToken().then(
-                            //                 (data) => {
-                            //                     console.log(data.accessToken.toString())
-                            //                 }
-                            //             )
-                            //         }
-                            //     }
-                            // }
-                            // onLogoutFinished={() => console.log("logout.")}
+                                onLoginFinished={signInWithFacebookCallback}
                             />
                         </Pressable>
                     </View>
-
-
-
-                    {/* TODO: add sign in w/ Google */}
-                    {/* TODO: add sign in with Facebook */}
-                    {/* TODO: add sign in with Twitter */}
-                    {/* TODO: add link from Sign In to signin page */}
 
                     <View style={{ marginVertical: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
                         <Link

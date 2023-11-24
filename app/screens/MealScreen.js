@@ -1,9 +1,9 @@
 import React, { useContext, useEffect, useState } from "react";
-import { FlatList, View, Text, Image, ImageBackground } from "react-native";
+import { FlatList, View, Text, ImageBackground } from "react-native";
+import { Image } from 'expo-image'
 
 import { defaultColors } from "../../src/styles/styles";
 import { MealContext } from "../../src/context";
-import { useSafeAreaFrame } from "react-native-safe-area-context";
 import { TextInput } from "react-native-gesture-handler";
 
 // TODO: add + button to header
@@ -11,15 +11,14 @@ import { TextInput } from "react-native-gesture-handler";
 // TODO: use camera for modal
 // TODO: save picture to local storage
 const Meal = (props) => {
-    console.log(props.item.img, props.item.img == undefined)
     let CMNP = props.item.CMNP
-
+    // console.log(props.)
     return (
-        <View style={{ borderBottomColor: defaultColors.black.color, borderBottomWidth: 1, marginBottom: 10, paddingBottom: 10 }}>
+        <View style={{ borderBottomColor: defaultColors.black.color, borderBottomWidth: 1, marginBottom: 18, paddingBottom: 18 }}>
             <Text style={{...defaultColors.black, fontSize: 16, fontWeight: 800}}>{props.item.title}</Text>
             
             {props.item?.description?.length > 0 ?
-                <Text style={{marginVertical: 10}}>{props.item.description}</Text>
+                <Text style={{marginTop: 10}}>{props.item.description}</Text>
                 : ''
             }
             
@@ -30,28 +29,35 @@ const Meal = (props) => {
                 : ''
             }
         
-            {props.item.tags.length > 0 ?
+            {props.item.tags.length > 0  ?
                 <FlatList
-                    style={{flexDirection: "row", justifyContent: 'space-between', marginVertical: 15}}
-                    data={props.item.tags}
-                    renderItem={({item}) => <Text style={{backgroundColor: defaultColors.lightGray.color, padding: 15, borderRadius: 20, overflow:'hidden'}}>{item}</Text>}
+                    style={{flexDirection: "row", justifyContent: 'start', flexWrap: 'wrap', marginTop: 10 }}
+                    data={props.item.tags.filter(tag => tag.length > 0)}
+                    renderItem={({item}) => <Text style={{backgroundColor: defaultColors.lightGray.color, padding: 15, borderRadius: 20, overflow:'hidden',  marginRight: 7, marginBottom: 7 }}>{item}</Text>}
                 /> : ''
             }
 
             {
-            (props.item.img == '' || props.item.img == undefined) ? '' :
+            (props.item.imgURI == '' || props.item.imgURI == undefined) ? '' :
                 typeof(props.item.img) === typeof('') ?
-                    <ImageBackground
-                        src={props.item.img}
-                        style={{
-                            width: 200,
-                            height: 150,
-                            marginTop: 10,
-                            backgroundColor: 'blue'
-                        }}
-                    ></ImageBackground> : 
+                    // <ImageBackground
+                    //     src={props.item.img}
+                    //     style={{
+                    //         width: 225*9/16,
+                    //         height: 225,
+                    //         marginTop: 10,
+                    //     }}
+                    // ></ImageBackground> : 
                     <Image
-                        source={props.item.img}
+                    src={props.item.imgURI}
+                    style={{
+                        width: 225*9/16,
+                        height: 225,
+                        marginTop: 10,
+                    }}
+                    ></Image> : 
+                    <Image
+                        source={props.item.imgURI}
                         style={{
                             width: 200,
                             height: 150,
@@ -66,7 +72,6 @@ const Meal = (props) => {
 const MealScreen = () => {
     const mealHelpers = useContext(MealContext)
 
-    console.log(mealHelpers.data)
     const [ mealsToRender, setMealsToRender ] = useState(mealHelpers.data)
     const [ search, setSearch ] = useState('')
 

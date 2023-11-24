@@ -25,7 +25,6 @@ const ReportScreen = () => {
     useEffect(() => {
         td = payload.map(meal => ['', meal.title, meal.CMNP.Calories, meal.CMNP.Protein, meal.CMNP.Fat, meal.CMNP.Carbs])
         setTableData(td)
-        console.log(tableData)
     }, [payload])
 
     let proteins = payload.map(meal => meal.CMNP.Protein).reduce((a, b) => a + b, 0)

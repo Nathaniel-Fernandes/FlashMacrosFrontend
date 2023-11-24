@@ -1,13 +1,17 @@
+// 3rd party
 import React, { useState } from "react";
 import { Text, View, Image, TextInput, Button, ScrollView } from "react-native";
-import { defaultColors } from '../../src/styles/styles';
 import { Link } from "expo-router"
+
+// local files
+import { defaultColors } from '../../src/styles/styles';
 
 const ForgotPassword = () => {
     const [username, setUsername] = useState('')
 
     return (
         <View style={{  backgroundColor: '#FFF', height: '100%' }}>
+            {/* Use "keyboardShouldPersistTaps='handled' with a <ScrollView> so clicks off the text-input will close the keyboard" */}
             <ScrollView style={{marginTop: 60 }} keyboardShouldPersistTaps='handled'>
                 <View style={{justifyContent: 'center', alignItems: 'center', marginVertical: 20}}>
                     <Image
@@ -42,6 +46,7 @@ const ForgotPassword = () => {
                     </View>
 
                     {/* TODO: send message to user that an email has been sent */}
+                    {/* Navigate to the Sign In screen on button press */}
                     <Link
                         href={'/'}
                         asChild
@@ -54,12 +59,15 @@ const ForgotPassword = () => {
                     </Link>
 
                     <View style={{marginVertical: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
+                        {/* Enable user to navigate to Sign In screen in case they wish to sign in */}
                         <Link
                             href={'/'}
                             asChild
                         >
                             <Text style={{...defaultColors.darkGray, fontWeight: 800}}>Sign In</Text>
                         </Link>
+
+                        {/* Enable user to navigate to Sign Up screen in case they wish to sign up */}
                         <Link
                             href={'/screens/SignUpScreen'}
                         >

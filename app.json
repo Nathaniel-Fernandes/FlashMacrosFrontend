@@ -42,7 +42,24 @@
         "cameraPermission": "Allow Flash Macros to access your camera.",
         "enableMicrophonePermission": false
       }],
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow FlashMacros to access your photos.",
+          "savePhotosPermission": "Allow FlashMacros to save photos.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ],
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "316702201220506",
+          "displayName": "FlashMacros",
+          "clientToken": "bf21f6ff7aaf8c71a1a39dbce3ac0b20",
+          "scheme": "fb316702201220506"
+        }
+      ]
     ],
     "extra": {
       "router": {

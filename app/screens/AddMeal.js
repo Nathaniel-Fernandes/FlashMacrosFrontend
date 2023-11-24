@@ -1,10 +1,11 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { StyleSheet, Text, Modal, View, TextInput, Button, Alert, TouchableOpacity, ImageBackground, ScrollView } from 'react-native';
+import React, { useContext, useState, useEffect } from 'react'
+import { StyleSheet, Text, Modal, View, TextInput, Button, ImageBackground, ScrollView } from 'react-native';
 import { defaultColors } from '../../src/styles/styles';
 import { useNavigation } from 'expo-router';
 import { MealContext } from '../../src/context';
 import { format } from 'date-fns'
 import Camera from '../../src/components/camera';
+import * as MediaLibrary from 'expo-media-library'; 
 
 const AddMealModal = () => {
     const navigation = useNavigation()
@@ -15,34 +16,39 @@ const AddMealModal = () => {
     const [mealTags, setMealTags] = useState('')
 
     const [openCamera, setOpenCamera] = useState(false)
-    const [imgFilePath, setImgFilePath] = useState('')
+    const [imgTempURI, setImgTempURI] = useState('')
 
-    useEffect(() => {
-        console.log('hii: ', imgFilePath)
-    }, [imgFilePath])
+    const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
 
     const closeModal = () => {
         setMealDescription('')
         setMealTags('')
-        setImgFilePath('')
+        setImgTempURI('')
         navigation.navigate('screens/MealScreen')
     }
 
-    const saveMeal = () => {
-        const meal = {
-            'title': format(new Date(), 'MM/dd/yyyy HH:MM'), // TODO: don't hard code PM in here LOL
-            'description': mealDescription,
-            'CMNP': {
-                'Calories': 1000,
-                'Protein': 100,
-                'Fat': 2,
-                'Carbs': 50
-            },
-            'tags': mealTags.split(','),
-            'img': imgFilePath // TODO: save images to file storage system
-        }
+    const saveMeal = async () => {
+        // get media library permission
+        let mediaLibraryPermission = await requestPermission()
+        console.log('current permissions: ', mediaLibraryPermission)
 
-        mealHelpers.addMeal(meal)
+        if (mediaLibraryPermission['status'] === 'granted') {
+            await MediaLibrary.createAssetAsync(imgTempURI).then((asset) => {
+                const meal = {
+                    'title': format(new Date(), 'MM/dd/yyyy p'),
+                    'description': mealDescription,
+                    'CMNP': {
+                        'Calories': 1000,
+                        'Protein': 100,
+                        'Fat': 2,
+                        'Carbs': 50
+                    },
+                    'tags': mealTags.split(','),
+                    'imgURI': asset.uri,
+                }    
+                mealHelpers.addMeal(meal)
+            })
+        }
     }
 
     return (
@@ -86,22 +92,22 @@ const AddMealModal = () => {
                 {
                     openCamera ?
                         <Modal>
-                            <Camera setOpenCamera={setOpenCamera} setImgFilePath={setImgFilePath} />
+                            <Camera setOpenCamera={setOpenCamera} setImgTempURI={setImgTempURI} />
                         </Modal>
                         : <Button
-                            title = {(imgFilePath === '') ? "Add a photo?" : "Retake photo"}
+                            title = {(imgTempURI === '') ? "Add a photo?" : "Retake photo"}
                             color={defaultColors.red.color}
                             onPress={() => setOpenCamera(true)}
                         ></Button>
                 }
 
                 {
-                imgFilePath === '' ? '' :
-                    typeof(imgFilePath) === typeof('') ?
+                imgTempURI === '' ? '' :
+                    typeof(imgTempURI) === typeof('') ?
                     <ImageBackground
-                        src={imgFilePath}
+                        src={imgTempURI}
                         style={{
-                            width: 415*9/16,
+                            width: 415*9/16, // 9:16 aspect ratio
                             height: 415,
                             marginTop: 10,
                             alignSelf: 'center',
@@ -109,7 +115,7 @@ const AddMealModal = () => {
                         }}
                     ></ImageBackground> : 
                     <Image
-                        source={imgFilePath}
+                        source={imgTempURI}
                         style={{
                             width: 415*9/16,
                             height: 415,

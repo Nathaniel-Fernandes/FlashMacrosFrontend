@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { Text, View, Image, TextInput, Button } from 'react-native'
-import RNPickerSelect from 'react-native-picker-select';
 import { defaultColors } from '../../src/styles/styles'
 import { useNavigation } from 'expo-router/';
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-const dummyData = {
+const DummyProfile = {
     name: 'Johanna Doe',
     email: 'johanna@company.com',
     heightFeet: '5',
@@ -23,13 +22,12 @@ const ProfileScreen = (props) => {
     const [validInput, setValidInput] = useState(true)
 
     const [apiKey, setApiKey] = useState('d763f815d9ec4955b9166954bc1bc073')
-    const [data, setData] = useState(dummyData)
+    const [data, setData] = useState(DummyProfile)
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const savedData = await AsyncStorage.getItem('FlashMacrosProfileStorage')
-                console.log(32, savedData)
                 if (savedData == null) {
                     throw new Error('No dummy data found. Throwing exception.')
                 } else {
@@ -63,11 +61,9 @@ const ProfileScreen = (props) => {
     const saveData = async (userData = null) => {
         if (userData === null) {
             await AsyncStorage.setItem('FlashMacrosProfileStorage', JSON.stringify(data))
-            console.log('set item! 2', userData)
         }
         else {
             await AsyncStorage.setItem('FlashMacrosProfileStorage', JSON.stringify(userData))
-            console.log('set item!', userData)
         }
     }
 
@@ -184,7 +180,7 @@ const ProfileScreen = (props) => {
                 <Button
                     title="Delete Profile"
                     color={defaultColors.red.color}
-                    onPress={() => saveData(dummyData).then(navigation.navigate('screens/SignUpScreen'))}
+                    onPress={() => saveData(DummyProfile).then(navigation.navigate('screens/SignUpScreen'))}
                 ></Button>
             </View>
         </View>

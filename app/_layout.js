@@ -1,21 +1,25 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+// 3rd party
+import React, { useEffect, useState } from 'react'
+import { Pressable, Text, View } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
-import { defaultColors } from '../src/styles/styles'
-import { Text } from 'react-native';
-import { DummyData, MealContext } from "../src/context";
 import { useNavigation } from 'expo-router/';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Settings } from 'react-native-fbsdk-next';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
-// Ask for consent first if necessary
-// Possibly only do this for iOS if no need to handle a GDPR-type flow
-Settings.initializeSDK();
+// local files
+import { DummyMeals, MealContext } from "../src/context";
+import { defaultColors } from '../src/styles/styles'
 
 export default function Layout() {
     const navigation = useNavigation()
 
-    // Load in starting data
-    const [meals, setMeals] = useState(DummyData)
+    // Define the in-memory data storage for the meals & the 2 helper functions for updating and deleting in-memory meals
+    const [meals, setMeals] = useState(DummyMeals)
+    const [deletingMeals, setDeletingMeals] = useState(false)
+
+    useEffect(() => {
+        console.log(deletingMeals)
+    }, [deletingMeals])
 
     const addMeal = (meal) => {
         setMeals([...meals, meal])
@@ -26,41 +30,47 @@ export default function Layout() {
         setMeals([...temp.splice(idx, 1)])
     }
 
+    // Load in meals from the on-device local storage, 1x on component start up
     useEffect(() => {
         const fetchData = async () => {
-            try {
-                const data = await AsyncStorage.getItem('FlashMacrosMealsData')
+            const data = await AsyncStorage.getItem('FlashMacrosMealsData')
 
-                if (data == null) {
-                    throw new Error('No dummy data found. Throwing exception.')
-                }
-                else {
-                    setMeals(JSON.parse(data))
-                }
+            if (data == null) {
+                throw new Error('No dummy data found. Throwing exception.')
             }
-            catch (e) {
-                console.log(e)
-                setMeals(DummyData)
+            else {
+                setMeals(JSON.parse(data))
             }
         }
 
+        // Call the fetchData function defined above
+        // If it fails, default to the dummy data
         fetchData()
-            .catch(e => setMeals(DummyData))
+            .catch(err => {
+                console.log(err)
+                setMeals(DummyMeals)
+            })
     }, [])
 
+    // Update the permanent on-device local storage every time the in-memory meals changes
     useEffect(() => {
         AsyncStorage.setItem('FlashMacrosMealsData', JSON.stringify(meals))
     }, [meals])
 
+    // Define the route layout of the app. Include the:
+    //  > name of each screen
+    //  > route-specific styling parameters
+    //  > header options
+    // Also, wrap the Drawer Component in the MealContext provider so the MealContext is accessible throughout the entire app
     return (
-        <MealContext.Provider value={{ data: meals, addMeal: addMeal, deleteMeal: deleteMeal }}>
+        <MealContext.Provider value={{ data: meals, addMeal: addMeal, deleteMeal: deleteMeal, deletingMeals: deletingMeals }}>
             <Drawer screenOptions={{
                 headerTintColor: defaultColors.red.color,
             }}>
                 <Drawer.Screen
                     options={{
                         headerShown: false,
-                        // swipeEnabled: false,
+                        // swipeEnabled: false, // TODO: uncomment in production
                         drawerItemStyle: { height: 0 },
                         unmountOnBlur: true
 
@@ -70,7 +80,7 @@ export default function Layout() {
                 <Drawer.Screen
                     options={{
                         headerShown: false,
-                        // swipeEnabled: false,
+                        // swipeEnabled: false, // TODO: uncomment in production
                         drawerItemStyle: { height: 0 },
                         unmountOnBlur: true
                     }}
@@ -80,7 +90,7 @@ export default function Layout() {
                 <Drawer.Screen
                     options={{
                         headerShown: false,
-                        // swipeEnabled: false,
+                        // swipeEnabled: false, // TODO: uncomment in production
                         drawerItemStyle: { height: 0 },
                         unmountOnBlur: true
                     }}
@@ -117,6 +127,8 @@ export default function Layout() {
                     }}
                     name="screens/ProfileScreen"
                 />
+
+                {/* Customize the header to have an Add Meals & Delete Meals button for this screen */}
                 <Drawer.Screen
                     options={{
                         drawerActiveTintColor: defaultColors.red.color,
@@ -125,10 +137,25 @@ export default function Layout() {
                         title: "Meals",
                         unmountOnBlur: true,
                         headerRight: () => (
-                            <Text
-                                style={{ color: defaultColors.red.color, fontSize: 30, marginRight: 10 }}
-                                onPress={() => navigation.navigate('screens/AddMeal')}
-                            >+</Text>) // TODO: make + functional
+                            <View
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    justifyContent: 'flex-end',
+                                    alignItems: 'baseline'
+                                }}
+                            >
+                                <Pressable
+                                    onPress={() => setDeletingMeals(true)}
+                                >
+                                    <Ionicons name='trash-outline' size={26} color={defaultColors.red.color} style={{ marginRight: 5}} />
+                                </Pressable>
+                                <Text
+                                    style={{ color: defaultColors.red.color, fontSize: 30, marginRight: 10 }}
+                                    onPress={() => navigation.navigate('screens/AddMeal')}
+                                >+</Text>
+                            </View>
+                        )
                     }}
                     name="screens/MealScreen"
                 />

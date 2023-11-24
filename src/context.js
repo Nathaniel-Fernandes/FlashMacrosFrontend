@@ -1,6 +1,7 @@
-import React, { createContext } from 'react'
+import { createContext } from 'react'
 
-const DummyData = [
+// Populate a couple dummy meals
+const DummyMeals = [
   {
       'title': '10/13/2023 6:53 PM',
       'description': 'Atlantic salmon with buttered corn and mashed potatoes',
@@ -11,7 +12,7 @@ const DummyData = [
           'Carbs': 56
       },
       'tags': ['Salmon', 'Corn', 'Mashed Potatoes'],
-      'img': require('../assets/salmon.jpg')
+      'imgURI': require('../assets/salmon.jpg')
   },
   {
       'title': '10/13/2023 12:01 PM',
@@ -23,14 +24,17 @@ const DummyData = [
           'Carbs': 37
         },
       'tags': [],
-      'img': require('../assets/cheftai.jpg')
+      'imgURI': require('../assets/cheftai.jpg')
   }
 ]
 
+// Creating a Context enables deeply-nested child components to access the global, in-memory source of truth data store
+// Reference: https://react.dev/reference/react/createContext
 const MealContext = createContext({
-  data: DummyData,
+  data: DummyMeals,
   addMeal: () => {},
-  deleteMeal: () => {}
+  deleteMeal: () => {},
+  deletingMeals: false
 })
 
-export { DummyData, MealContext }
+export { DummyMeals, MealContext }

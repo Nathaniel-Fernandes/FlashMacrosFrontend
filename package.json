@@ -19,7 +19,9 @@
     "expo-camera": "~13.4.4",
     "expo-constants": "~14.4.2",
     "expo-dev-client": "~2.4.12",
+    "expo-file-system": "~15.4.5",
     "expo-linking": "~5.0.2",
+    "expo-media-library": "~15.4.1",
     "expo-router": "^2.0.0",
     "expo-splash-screen": "~0.20.5",
     "expo-status-bar": "~1.6.0",
@@ -41,7 +43,7 @@
     "react-native-svg": "^14.0.0",
     "react-native-vision-camera": "^3.6.9",
     "typescript": "^5.1.3",
-    "expo-file-system": "~15.4.5"
+    "expo-image": "~1.3.5"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
