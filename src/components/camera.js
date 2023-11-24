@@ -197,7 +197,6 @@ const styles = StyleSheet.create({
         height: 80,
         width: 80,
         borderRadius: 40,
-        //ADD backgroundColor COLOR GREY
         backgroundColor: '#B2BEB5',
 
         alignSelf: 'center',

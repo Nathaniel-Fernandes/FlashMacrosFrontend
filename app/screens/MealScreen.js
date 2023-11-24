@@ -1,58 +1,18 @@
 // 3rd party
-import React, { useContext, useEffect, useState } from "react";
-import { FlatList, View, Text } from "react-native";
-import { Image } from 'expo-image'
+import React, { useContext, useEffect, useState, memo } from "react";
+import { FlatList, View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { parse } from "date-fns";
 
 // local files
 import { defaultColors } from "../../src/styles/styles";
 import { MealContext } from "../../src/context";
 import { TextInput } from "react-native-gesture-handler";
-
-const Meal = (props) => {
-    let CMNP = props.item.CMNP
-    return (
-        <View style={{ borderBottomColor: defaultColors.black.color, borderBottomWidth: 1, marginBottom: 18, paddingBottom: 18 }}>
-            <Text style={{ ...defaultColors.black, fontSize: 16, fontWeight: 800 }}>{props.item.title}</Text>
-
-            {props.item?.description?.length > 0 ?
-                <Text style={{ marginTop: 10 }}>{props.item.description}</Text>
-                : ''
-            }
-
-            {Object.keys(CMNP).length !== 0 ?
-                <Text
-                    style={{ ...defaultColors.blue, marginTop: 10 }}
-                >{`Calories: ${CMNP.Calories}; Protein: ${CMNP.Protein}; Fat: ${CMNP.Fat}; Carbs: ${CMNP.Carbs}`}</Text>
-                : ''
-            }
-
-            {props.item.tags.length > 0 ?
-                <FlatList
-                    style={{ flexDirection: "row", justifyContent: 'start', flexWrap: 'wrap', marginTop: 10 }}
-                    data={props.item.tags.filter(tag => tag.length > 0)}
-                    renderItem={({ item }) => <Text style={{ backgroundColor: defaultColors.lightGray.color, padding: 15, borderRadius: 20, overflow: 'hidden', marginRight: 7, marginBottom: 7 }}>{item}</Text>}
-                /> : ''
-            }
-
-            {
-                <Image
-                    source={props.item.img.URI}
-                    style={{
-                        width: 300,
-                        height: props.item.img.height/(props.item.img.width/300),
-                        marginTop: 10,
-                    }}
-                ></Image>
-            }
-        </View>
-    )
-}
+import Meal from "../../src/components/meal";
 
 const MealScreen = () => {
     const mealHelpers = useContext(MealContext)
 
-    const [mealsToRender, setMealsToRender] = useState(mealHelpers.data)
+    const [mealsToRender, setMealsToRender] = useState([])
     const [search, setSearch] = useState('')
 
     const sortMealsByDate = (mealObj1, mealObj2) => {
@@ -60,15 +20,23 @@ const MealScreen = () => {
         return delta
     }
 
+    console.log(mealsToRender)
+
+    useEffect(() => {
+        if (Object.keys(mealHelpers.data).length == 0) {
+            mealHelpers.setDeletingMeals(false)
+        }
+    }, [mealHelpers.data])
+
     useEffect(() => {
         let searchLower = search.toLowerCase()
 
         if (searchLower === '') {
-            const sorted = [...mealHelpers.data].sort(sortMealsByDate)
+            const sorted = Object.entries(mealHelpers.data).map(x => { return {...x[1], uuid: x[0]}}).sort(sortMealsByDate)
             setMealsToRender(sorted)
         }
         else {
-            let filtered = mealHelpers.data.filter((mealObj) => {
+            let filtered = Object.entries(mealHelpers.data).map(x => { return {...x[1], uuid: x[0]}}).filter((mealObj) => {
                 if (mealObj['description'].toLowerCase().includes(searchLower)) {
                     return true
                 }
@@ -106,15 +74,108 @@ const MealScreen = () => {
                 <View style={{
                     padding: 10,
                     paddingTop: 0,
+                    display: 'flex'
                 }}>
                     <FlatList
                         data={mealsToRender}
-                        renderItem={(item) => Meal(item)}
+                        renderItem={(props) => Meal({ 
+                            ...props,
+                            deletingMeals: mealHelpers.deletingMeals,
+                            deleteMeal: mealHelpers.deleteMeal,
+                            editingMeals: mealHelpers.editingMeals,
+                            editMeal: mealHelpers.editMeals
+                        })}
+                        keyExtractor={item => item.uuid}
                     />
                 </View>
             </View>
+
+            {
+                (!mealHelpers.deletingMeals) ? '' :
+                <View style={styles.buttonContainer}>
+                <View style={styles.buttons}>
+                    <TouchableOpacity
+                        style={{
+                            backgroundColor: '#fff',
+                            padding: 10,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            borderRadius: 10,
+                            borderWidth: 2,
+                            borderColor: defaultColors.darkGray.color,
+                        }}
+                        onPress={() => mealHelpers.setDeletingMeals(false)}
+                    >
+                        <Text style={{ color: defaultColors.darkGray.color, fontWeight: '500' }}>
+                            Cancel
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={{
+                            backgroundColor: '#fff',
+                            padding: 10,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            borderRadius: 10,
+                            borderWidth: 2,
+                            borderColor: defaultColors.red.color,
+                        }}
+                        // onPress={savePhoto}
+                    >
+
+                        <Text style={{ color: defaultColors.red.color, fontWeight: '500' }}>
+                            Use Photo
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+            }
         </View>
     )
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    button: {
+        backgroundColor: 'gray',
+    },
+    backButton: {
+        backgroundColor: 'rgba(0,0,0,0.0)',
+        position: 'absolute',
+        justifyContent: 'center',
+        width: '100%',
+        top: 0,
+        padding: 20,
+    },
+    buttonContainer: {
+        backgroundColor: 'rgba(0,0,0,0.2)',
+        position: 'absolute',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
+        bottom: 0,
+        padding: 20,
+    },
+    buttons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    camButton: {
+        height: 80,
+        width: 80,
+        borderRadius: 40,
+        backgroundColor: '#B2BEB5',
+
+        alignSelf: 'center',
+        borderWidth: 4,
+        borderColor: 'white',
+    },
+
+});
 
 export default MealScreen

@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react'
-import { Text, Modal, View, TextInput, Button, ImageBackground, ScrollView } from 'react-native';
+import { Text, View, Modal, TextInput, Button, ImageBackground, ScrollView, ActivityIndicator } from 'react-native';
+import Modal2 from "react-native-modal";
 import { defaultColors } from '../../src/styles/styles';
 import { useNavigation } from 'expo-router';
 import { MealContext } from '../../src/context';
@@ -9,8 +10,9 @@ import * as MediaLibrary from 'expo-media-library';
 
 const AddMealModal = () => {
     const navigation = useNavigation()
-
     const mealHelpers = useContext(MealContext)
+
+    const [isLoading, setIsLoading] = useState(false)
 
     const [mealDescription, setMealDescription] = useState('')
     const [mealTags, setMealTags] = useState('')
@@ -20,11 +22,17 @@ const AddMealModal = () => {
 
     const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
 
-    const closeModal = () => {
-        setMealDescription('')
-        setMealTags('')
-        setImgTempURI('')
-        navigation.navigate('screens/MealScreen')
+    const closeModal = async (timeout=1000) => {
+        setIsLoading(true)
+
+        // Use Timeout to allow sorting logic to complete in MealScreen before navigating to the Meals Screen    
+        await setTimeout(() => {
+            setMealDescription('')
+            setMealTags('')
+            setImgTempURI('')
+            navigation.navigate('screens/MealScreen')
+            setIsLoading(false)
+        }, timeout)
     }
 
     const saveMeal = async () => {
@@ -36,14 +44,14 @@ const AddMealModal = () => {
             await MediaLibrary.createAssetAsync(imgTempURI).then((asset) => {
                 console.log('asset: ', asset)
 
-                const meal = {
+                const mealObj = {
                     'title': format(new Date(), 'MM/dd/yyyy p'),
                     'description': mealDescription,
                     'CMNP': {
-                        'Calories': 1000,
-                        'Protein': 100,
-                        'Fat': 2,
-                        'Carbs': 50
+                        'calories': Math.round(500 * (1 + Math.random())),
+                        'proteins': Math.round(100 * (0.5 + Math.random())),
+                        'fats': Math.round(20 * (1 + Math.random())),
+                        'carbs': Math.round(50 * (1 + Math.random()))
                     },
                     'tags': mealTags.split(','),
                     'img': {
@@ -52,7 +60,7 @@ const AddMealModal = () => {
                         'height': asset.height
                     }
                 }
-                mealHelpers.addMeal(meal)
+                mealHelpers.addMeal(mealObj)
             })
         }
     }
@@ -141,9 +149,30 @@ const AddMealModal = () => {
                     <Button
                         title="Cancel"
                         color={defaultColors.red.color}
-                        onPress={closeModal}
+                        onPress={() => closeModal(0)}
                     ></Button>
                 </View>
+
+                <Modal2
+                    isVisible={isLoading}
+                    animationInTiming={0.1}
+                    animationOutTiming={0.1}
+                    backdropOpacity={0.5}
+                >
+                    <ActivityIndicator
+                        style={{
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                        size="large"
+                        color={defaultColors.red.color}
+                    />
+                </Modal2>
             </ScrollView>
         </View>
     )

@@ -1,15 +1,16 @@
 import { createContext } from 'react'
+import uuid from 'react-native-uuid'
 
 // Populate a couple dummy meals
-const DummyMeals = [
-  {
+const DummyMeals = {
+  [uuid.v4()]: {
       'title': '10/13/2023 6:53 PM',
       'description': 'Atlantic salmon with buttered corn and mashed potatoes',
       'CMNP': {
-          'Calories': 768,
-          'Protein': 42,
-          'Fat': 31,
-          'Carbs': 56
+          'calories': 768,
+          'proteins': 42,
+          'fats': 31,
+          'carbs': 56
       },
       'tags': ['Salmon', 'Corn', 'Mashed Potatoes'],
       'img': {
@@ -18,14 +19,14 @@ const DummyMeals = [
         'height': 3024
       }
   },
-  {
+  [uuid.v4()]: {
       'title': '10/13/2023 12:01 PM',
       'description': '',
       'CMNP': {
-          'Calories': 431,
-          'Protein': 22,
-          'Fat': 16,
-          'Carbs': 37
+          'calories': 431,
+          'proteins': 22,
+          'fats': 16,
+          'carbs': 37
         },
       'tags': [],
       'img': {
@@ -34,7 +35,7 @@ const DummyMeals = [
         'height': 2830
       }
   }
-]
+}
 
 // Creating a Context enables deeply-nested child components to access the global, in-memory source of truth data store
 // Reference: https://react.dev/reference/react/createContext
@@ -42,7 +43,8 @@ const MealContext = createContext({
   data: DummyMeals,
   addMeal: () => {},
   deleteMeal: () => {},
-  deletingMeals: false
+  deletingMeals: false,
+  editingMeals: false
 })
 
 export { DummyMeals, MealContext }
