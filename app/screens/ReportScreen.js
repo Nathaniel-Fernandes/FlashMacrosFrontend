@@ -25,15 +25,15 @@ const ReportScreen = () => {
     }
 
     // Component State
-    const [processedData, setProcessedData] = useState(mealHelpers.data.map(convertDate))
-    const [pastThirtyDayData, setPastThirtyDayData] = useState(mealHelpers.data.map(convertDate))
+    const [processedData, setProcessedData] = useState(Object.entries(mealHelpers.data).map(x => { return {...x[1], uuid: x[0]}}).map(convertDate))
+    const [pastThirtyDayData, setPastThirtyDayData] = useState(Object.entries(mealHelpers.data).map(x => { return {...x[1], uuid: x[0]}}).map(convertDate))
     const [monthlyMacros, setMonthlyMacros] = useState({ proteins: 1, fats: 1, carbs: 1 })
     const [chartData, setChartData] = useState([])
     const [tableData, setTableData] = useState([])
 
     // Data Updaters
     useEffect(() => {
-        setProcessedData(mealHelpers.data.map(convertDate).sort(sortMealsByDate))
+        setProcessedData(Object.entries(mealHelpers.data).map(x => { return {...x[1], uuid: x[0]}}).map(convertDate).sort(sortMealsByDate))
     }, [mealHelpers.data])
 
     useEffect(() => {

@@ -1,28 +1,45 @@
-import React, { useContext, useState } from 'react'
-import { Text, View, Modal, TextInput, Button, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useContext, useState, useEffect } from 'react'
+import { Text, View, Modal, TextInput, Button, ImageBackground, ScrollView, ActivityIndicator } from 'react-native';
 import Modal2 from "react-native-modal";
 import { defaultColors } from '../../src/styles/styles';
-import { useNavigation } from 'expo-router';
 import { Image } from 'expo-image'
+import { useNavigation, useLocalSearchParams } from 'expo-router';
 import { MealContext } from '../../src/context';
 import { format } from 'date-fns'
 import Camera from '../../src/components/camera';
 import * as MediaLibrary from 'expo-media-library';
 
-const AddMealModal = () => {
+const EditMealModal = () => {
     const navigation = useNavigation()
     const mealHelpers = useContext(MealContext)
 
-    const [isLoading, setIsLoading] = useState(false)
+    const params = useLocalSearchParams()
 
+    // component logistics state
+    const [uuid, setUuid] = useState('')
+    const [isLoading, setIsLoading] = useState(false)
+    const [openCamera, setOpenCamera] = useState(false)
+    const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
+
+    // data state
+    const [imgTempURI, setImgTempURI] = useState('')
     const [mealDescription, setMealDescription] = useState('')
     const [mealTags, setMealTags] = useState('')
 
-    const [openCamera, setOpenCamera] = useState(false)
-    const [imgTempURI, setImgTempURI] = useState('')
+    useEffect(() => {
+        setUuid(params.uuid)
+    }, [params])
 
-    const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
+    useEffect(() => {
+        if (uuid != '') {
+            setIsLoading(false)
+            setImgTempURI(mealHelpers.data[uuid].img.URI)
+            setMealDescription(mealHelpers.data[uuid].description)
+            setMealTags(mealHelpers.data[uuid].tags.join(','))
+        }
+    }, [uuid])
 
+    // helpers
     const closeModal = async (timeout = 1000) => {
         setIsLoading(true)
 
@@ -31,35 +48,62 @@ const AddMealModal = () => {
             setMealDescription('')
             setMealTags('')
             setImgTempURI('')
-            navigation.navigate('screens/MealScreen')
             setIsLoading(false)
+            setUuid('')
+            navigation.navigate('screens/MealScreen')
         }, timeout)
     }
 
     const saveMeal = async () => {
-        // get media library permission
-        let mediaLibraryPermission = await requestPermission()
+        if (imgTempURI === mealHelpers.data[uuid].img.URI) {
+            console.log('saving meal method 1')
 
-        if (mediaLibraryPermission['status'] === 'granted') {
-            await MediaLibrary.createAssetAsync(imgTempURI).then((asset) => {
-                const mealObj = {
-                    'title': format(new Date(), 'MM/dd/yyyy p'),
-                    'description': mealDescription,
-                    'CMNP': {
-                        'calories': Math.round(500 * (1 + Math.random())),
-                        'proteins': Math.round(100 * (0.5 + Math.random())),
-                        'fats': Math.round(20 * (1 + Math.random())),
-                        'carbs': Math.round(50 * (1 + Math.random()))
-                    },
-                    'tags': mealTags.split(','),
-                    'img': {
-                        'URI': asset.uri,
-                        'width': asset.width,
-                        'height': asset.height
-                    }
+            const mealObj = {
+                'title': mealHelpers.data[uuid].title,
+                'description': mealDescription,
+                'CMNP': {
+                    'calories': Math.round(500 * (1 + Math.random())),
+                    'proteins': Math.round(100 * (0.5 + Math.random())),
+                    'fats': Math.round(20 * (1 + Math.random())),
+                    'carbs': Math.round(50 * (1 + Math.random()))
+                },
+                'tags': mealTags.split(','),
+                'img': {
+                    'URI': mealHelpers.data[uuid].img.URI,
+                    'width': mealHelpers.data[uuid].img.width,
+                    'height': mealHelpers.data[uuid].img.height
                 }
-                mealHelpers.addMeal(mealObj)
-            })
+            }
+            mealHelpers.addMeal(mealObj, uuid)
+        }
+
+        else {
+            console.log('saving meal method 2')
+
+            // get media library permission
+            let mediaLibraryPermission = await requestPermission()
+
+            if (mediaLibraryPermission['status'] === 'granted') {
+                await MediaLibrary.createAssetAsync(imgTempURI).then((asset) => {
+                    const mealObj = {
+                        'title': mealHelpers.data[uuid].title,
+                        'description': mealDescription,
+                        'CMNP': {
+                            'calories': Math.round(500 * (1 + Math.random())),
+                            'proteins': Math.round(100 * (0.5 + Math.random())),
+                            'fats': Math.round(20 * (1 + Math.random())),
+                            'carbs': Math.round(50 * (1 + Math.random()))
+                        },
+                        'tags': mealTags.split(','),
+                        'img': {
+                            'URI': asset.uri,
+                            'width': asset.width,
+                            'height': asset.height
+                        }
+                    }
+                    mealHelpers.addMeal(mealObj, uuid)
+                })
+            }
         }
     }
 
@@ -67,7 +111,7 @@ const AddMealModal = () => {
         // TODO: add screen transition animations by making this a modal in the MealScreen
         <View style={{ height: '100%', padding: 5, backgroundColor: '#fff' }}>
             <ScrollView style={{ marginVertical: 50, marginHorizontal: 20 }} contentContainerStyle={{ display: 'flex', flexDirection: 'column' }}>
-                <Text style={{ ...defaultColors.black, fontSize: 28, fontWeight: 800 }}>Add new meal</Text>
+                <Text style={{ ...defaultColors.black, fontSize: 28, fontWeight: 800 }}>Edit meal</Text>
 
                 <View style={{ marginVertical: 15 }}>
                     <Text>Description</Text>
@@ -119,10 +163,10 @@ const AddMealModal = () => {
                         <Image
                             source={imgTempURI}
                             style={{
-                                width: 415*9/16,
-                                height: 415,
+                                width: 415,
+                                height: mealHelpers.data[uuid].img.height / (mealHelpers.data[uuid].img.width / 415),
                                 marginTop: 10,
-                                alignSelf: 'center'
+                                alignSelf: 'center',
                             }}
                         />
                 }
@@ -166,4 +210,4 @@ const AddMealModal = () => {
     )
 }
 
-export default AddMealModal
+export default EditMealModal

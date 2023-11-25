@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useContext } from 'react'
 import { Text, View, Image, TextInput, Button } from 'react-native'
 import { defaultColors } from '../../src/styles/styles'
 import { useNavigation } from 'expo-router/';
 import AsyncStorage from '@react-native-async-storage/async-storage'
+
+// dexcom authentication
+import { makeRedirectUri, useAuthRequest } from 'expo-auth-session';
+import { TouchableOpacity } from 'react-native-gesture-handler';
+import { DexcomAuthContext } from '../../src/context';
 
 const DummyProfile = {
     name: 'Johanna Doe',
@@ -18,31 +23,44 @@ const DummyProfile = {
 const ProfileScreen = (props) => {
     const navigation = useNavigation()
 
+    // 0. Profile data, state, helpers
+    const [data, setData] = useState(DummyProfile)
     const [editable, setEditable] = useState(false)
     const [validInput, setValidInput] = useState(true)
 
-    const [apiKey, setApiKey] = useState('d763f815d9ec4955b9166954bc1bc073')
-    const [data, setData] = useState(DummyProfile)
-
+    // load in the profile data from the persistent on-device local storage, on component startup
     useEffect(() => {
         const fetchData = async () => {
-            try {
-                const savedData = await AsyncStorage.getItem('FlashMacrosProfileStorage')
-                if (savedData == null) {
-                    throw new Error('No dummy data found. Throwing exception.')
-                } else {
-                    setData(JSON.parse(savedData))
-                }
-            }
-            catch (e) {
-                console.log(e)
-            }
+            AsyncStorage.getItem('FlashMacrosProfileStorage')
+                .then(data => {
+                    if (data == null) {
+                        throw new Error('No dummy data found. Throwing exception.')
+                    }
+                    else {
+                        setData(JSON.parse(data))
+                    }
+                })
+                .catch(err => {
+                    console.log(err)
+                    AsyncStorage.setItem('FlashMacrosProfileStorage', JSON.stringify(DummyProfile))
+                })
         }
 
         fetchData()
-            .catch(e => console.log(e))
+            .catch(console.log)
     }, [])
 
+    // check if any fields are empty. If so, prevent saving.
+    useEffect(() => {
+        if ([data.name, data.email, data.heightFeet, data.heightInches, data.weight, data.race, data.age, data.sex].includes('')) {
+            setValidInput(false)
+        }
+        else {
+            setValidInput(true)
+        }
+    }, [data])
+
+    // helper: save the user's input
     const handleChange = (e, type) => {
         const conversion = {
             'email': 'email',
@@ -58,6 +76,7 @@ const ProfileScreen = (props) => {
         setData({ ...data, [conversion[type]]: e })
     }
 
+    // helper: save the in-memory form fields to on-device local storage
     const saveData = async (userData = null) => {
         if (userData === null) {
             await AsyncStorage.setItem('FlashMacrosProfileStorage', JSON.stringify(data))
@@ -67,14 +86,42 @@ const ProfileScreen = (props) => {
         }
     }
 
+    // 1. Dexcom Authentication data, state, helpers
+    // global context & component state
+    dexcomAuthHelpers = useContext(DexcomAuthContext)
+
+    const [authStatus, setAuthStatus] = useState(!!dexcomAuthHelpers.authCode && !!dexcomAuthHelpers.accessToken)
+
+    // promptAsync is a f(x) that will open the Dexcom OAuth sign in modal
+    // Any data sent from the Dexcom server will be stored in "response"
+    const [request, response, promptAsync] = useAuthRequest(
+        {
+            clientId: '3ljSynAhTDK6Uq8vxYz7cdzHZPtOEknS',
+            clientSecret: '5wRd0vhpERTgwQS9', // [ECEN 404 TODO]: move the clientSecret to the server to be more secure
+            redirectUri: makeRedirectUri({
+                scheme: 'flashmacros',
+                path: 'redirect'
+            }),
+            scopes: ['offline_access']
+        },
+        {
+            authorizationEndpoint: 'https://sandbox-api.dexcom.com/v2/oauth2/login'
+        }
+    )
+
+    console.log(dexcomAuthHelpers)
+
+    // whenever the response changes (i.e., the user has completed the OAuth modal), test to see if request was successful or rejected
     useEffect(() => {
-        if ([data.name, data.email, data.heightFeet, data.heightInches, data.weight, data.race, data.age, data.sex].includes('')) {
-            setValidInput(false)
+        if (!!response) {
+            setAuthStatus(response.type)
+
+            if (response.type === 'success') {
+                const { code } = response.params;
+                dexcomAuthHelpers.setAuthCode(code) // update global data store with new code
+            }
         }
-        else {
-            setValidInput(true)
-        }
-    }, [data])
+    }, [response]);
 
     // TODO: make it easier to enter text 
     return (
@@ -153,9 +200,50 @@ const ProfileScreen = (props) => {
                         ''
                     }
                 </View>
-                <View style={{ marginVertical: 20, borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, paddingBottom: 8 }}>
-                    <Text style={{ color: defaultColors.red.color, fontWeight: 800, paddingBottom: 10 }}>DexCom API Key</Text>
-                    <TextInput editable={editable} defaultValue={apiKey} onChangeText={setApiKey}></TextInput>
+                <View style={{ marginVertical: 20, borderBottomColor: defaultColors.darkGray.color, paddingBottom: 8 }}>
+                    <Text style={{ color: defaultColors.red.color, fontWeight: 800, paddingBottom: 10, textAlign: 'center' }}>DexCom API Key</Text>
+
+                    {
+                        ((authStatus !== 'success' && authStatus !== true) || !!!dexcomAuthHelpers.accessToken || !!!dexcomAuthHelpers.authCode) ?
+                            <TouchableOpacity
+                                style={{
+                                    backgroundColor: '#59a618',
+                                    padding: 10,
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    borderRadius: 10,
+                                    borderWidth: 2,
+                                    borderColor: '#59a618',
+                                }}
+                                disabled={!request}
+                                onPress={promptAsync}
+                            >
+                                <Text style={{ color: defaultColors.white.color, fontWeight: '800' }}>
+                                    Authorize Dexcom Data
+                                </Text>
+                            </TouchableOpacity>
+                            :
+                            <TouchableOpacity
+                                style={{
+                                    backgroundColor: '#dc3545',
+                                    padding: 10,
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    borderRadius: 10,
+                                    borderWidth: 2,
+                                    borderColor: '#dc3545'
+                                }}
+                                onPress={dexcomAuthHelpers.revokeAuthorization}
+                            >
+                                <Text style={{ color: defaultColors.white.color, fontWeight: '800' }}>
+                                    Revoke Dexcom Authorization
+                                </Text>
+                            </TouchableOpacity>
+                    }
+                    {
+                        (authStatus === 'error') ?
+                            <Text style={{ color: defaultColors.red.color, marginTop: 10 }}>Authorization denied. Please try again to connect Dexcom account.</Text> : ''
+                    }
                 </View>
 
                 {
@@ -167,16 +255,12 @@ const ProfileScreen = (props) => {
                             onPress={() => { setEditable(false); saveData() }}
                         ></Button>
                         : <Button
-                            title="Edit?"
+                            title="Edit Profile?"
                             color={defaultColors.blue.color}
                             onPress={() => setEditable(true)}
                         ></Button>
                 }
 
-                {/* <Button
-                    title="Edit Profile"
-                    color={defaultColors.blue.color}
-                ></Button> */}
                 <Button
                     title="Delete Profile"
                     color={defaultColors.red.color}

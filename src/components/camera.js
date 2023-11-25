@@ -63,7 +63,6 @@ const CameraComponent = (props) => {
 
     // The parent AddMeals component sends 2 f(x) via props, that allow this component (the child) to mutate state in the parent's scope
     const savePhoto = () => {
-        console.log('child: tempImgURI: ', imgTempURI)
         props.setImgTempURI(imgTempURI)
         props.setOpenCamera(false)
     }

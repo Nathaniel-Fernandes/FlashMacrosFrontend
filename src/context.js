@@ -44,7 +44,22 @@ const MealContext = createContext({
   addMeal: () => {},
   deleteMeal: () => {},
   deletingMeals: false,
-  editingMeals: false
+  setDeletingMeals: () => {},
+  editingMeals: false,
+  setEditingMeals: () => {},
+  editMeal: () => {}
 })
 
-export { DummyMeals, MealContext }
+const DexcomAuthContext = createContext({
+  authCode: '',
+  accessToken: '',
+  refreshToken: '',
+  setAuthCode: () => {},
+  setAccessToken: () => {},
+  setRefreshToken: () => {},
+  getAccessToken: () => {},
+  revokeAuthorization: () => {},
+  refreshAccessToken: () => {}
+})
+
+export { DummyMeals, MealContext, DexcomAuthContext }

@@ -20,8 +20,6 @@ const MealScreen = () => {
         return delta
     }
 
-    console.log(mealsToRender)
-
     useEffect(() => {
         if (Object.keys(mealHelpers.data).length == 0) {
             mealHelpers.setDeletingMeals(false)
@@ -32,11 +30,11 @@ const MealScreen = () => {
         let searchLower = search.toLowerCase()
 
         if (searchLower === '') {
-            const sorted = Object.entries(mealHelpers.data).map(x => { return {...x[1], uuid: x[0]}}).sort(sortMealsByDate)
+            const sorted = Object.entries(mealHelpers.data).map(x => { return { ...x[1], uuid: x[0] } }).sort(sortMealsByDate)
             setMealsToRender(sorted)
         }
         else {
-            let filtered = Object.entries(mealHelpers.data).map(x => { return {...x[1], uuid: x[0]}}).filter((mealObj) => {
+            let filtered = Object.entries(mealHelpers.data).map(x => { return { ...x[1], uuid: x[0] } }).filter((mealObj) => {
                 if (mealObj['description'].toLowerCase().includes(searchLower)) {
                     return true
                 }
@@ -78,12 +76,12 @@ const MealScreen = () => {
                 }}>
                     <FlatList
                         data={mealsToRender}
-                        renderItem={(props) => Meal({ 
+                        renderItem={(props) => Meal({
                             ...props,
                             deletingMeals: mealHelpers.deletingMeals,
                             deleteMeal: mealHelpers.deleteMeal,
                             editingMeals: mealHelpers.editingMeals,
-                            editMeal: mealHelpers.editMeals
+                            editMeal: mealHelpers.editMeal
                         })}
                         keyExtractor={item => item.uuid}
                     />
@@ -91,44 +89,27 @@ const MealScreen = () => {
             </View>
 
             {
-                (!mealHelpers.deletingMeals) ? '' :
-                <View style={styles.buttonContainer}>
-                <View style={styles.buttons}>
-                    <TouchableOpacity
-                        style={{
-                            backgroundColor: '#fff',
-                            padding: 10,
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            borderRadius: 10,
-                            borderWidth: 2,
-                            borderColor: defaultColors.darkGray.color,
-                        }}
-                        onPress={() => mealHelpers.setDeletingMeals(false)}
-                    >
-                        <Text style={{ color: defaultColors.darkGray.color, fontWeight: '500' }}>
-                            Cancel
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={{
-                            backgroundColor: '#fff',
-                            padding: 10,
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            borderRadius: 10,
-                            borderWidth: 2,
-                            borderColor: defaultColors.red.color,
-                        }}
-                        // onPress={savePhoto}
-                    >
-
-                        <Text style={{ color: defaultColors.red.color, fontWeight: '500' }}>
-                            Use Photo
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
+                (!mealHelpers.deletingMeals && !mealHelpers.editingMeals) ? '' :
+                    <View style={styles.buttonContainer}>
+                        <View style={styles.buttons}>
+                            <TouchableOpacity
+                                style={{
+                                    backgroundColor: '#fff',
+                                    padding: 10,
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    borderRadius: 10,
+                                    borderWidth: 2,
+                                    borderColor: defaultColors.darkGray.color,
+                                }}
+                                onPress={() => { mealHelpers.setDeletingMeals(false), mealHelpers.setEditingMeals(false) }}
+                            >
+                                <Text style={{ color: defaultColors.darkGray.color, fontWeight: '500' }}>
+                                    { mealHelpers.deletingMeals ? "Stop Deleting" : "Stop Editing" }
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
             }
         </View>
     )
@@ -162,20 +143,9 @@ const styles = StyleSheet.create({
     },
     buttons: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         width: '100%',
     },
-    camButton: {
-        height: 80,
-        width: 80,
-        borderRadius: 40,
-        backgroundColor: '#B2BEB5',
-
-        alignSelf: 'center',
-        borderWidth: 4,
-        borderColor: 'white',
-    },
-
 });
 
 export default MealScreen

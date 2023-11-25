@@ -16,6 +16,7 @@ const Meal = (props) => {
                         style={{
                             position: 'absolute',
                             right: 0,
+                            zIndex: 1
                         }}
                         onPress={() => props.deleteMeal(props.item.uuid)}
                     >
@@ -30,9 +31,10 @@ const Meal = (props) => {
                         style={{
                             position: 'absolute',
                             right: 0,
-                            color: defaultColors.red.color
+                            color: defaultColors.red.color,
+                            zIndex: 1
                         }}
-                        onPress={() => props.editingMeals(props.index)}
+                        onPress={() => props.editMeal(props.item.uuid)}
                     >
                         Edit
                     </Text>
