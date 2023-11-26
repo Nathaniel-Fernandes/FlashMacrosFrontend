@@ -1,82 +1,266 @@
-import React, { useContext, useEffect, useState } from "react";
-import { Text, View, Dimensions, ActivityIndicator } from "react-native";
+import React, { useContext, useEffect, useState, useRef, useCallback } from "react";
+import { Text, View, Dimensions, ActivityIndicator, TouchableOpacity } from "react-native";
 import Modal from "react-native-modal";
-import { differenceInDays, format, subDays } from "date-fns";
+import { differenceInDays, format, parse, subDays } from "date-fns";
 import { LineChart, BarChart } from "react-native-gifted-charts";
+import * as DocumentPicker from 'expo-document-picker';
 
 import { DexcomAuthContext } from "../../src/context";
 import { defaultColors } from "../../src/styles/styles";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "expo-router/src/useFocusEffect";
+
+// Custom hook to fix issues w/ setInterval not remembering state: https://overreacted.io/making-setinterval-declarative-with-react-hooks/
+function useInterval(callback, delay) {
+    const savedCallback = useRef();
+
+    // Remember the latest callback.
+    useEffect(() => {
+        savedCallback.current = callback;
+    }, [callback]);
+
+    // Set up the interval.
+    useEffect(() => {
+        function tick() {
+            savedCallback.current();
+        }
+        if (delay !== null) {
+            let id = setInterval(tick, delay);
+            return () => clearInterval(id);
+        }
+    }, [delay]);
+}
 
 const DataScreen = () => {
     const dexcomAuthHelpers = useContext(DexcomAuthContext)
 
-    const [isLoading, setIsLoading] = useState(true)
+    const [isLoading, setIsLoading] = useState(false)
     const [egv, setEGV] = useState({})
     const [plottingData, setPlottingData] = useState([])
+    const [showLineChart, setShowLineChart] = useState(false)
+
+    useFocusEffect(useCallback(() => {
+        if (plottingData.length > 5) {
+            console.log(plottingData)
+            setShowLineChart(true)
+        }
+        else {
+            setShowLineChart(false)
+        }
+
+        return () => {
+            setShowLineChart(false)
+        }
+    }, [plottingData]))
+
+    const [document, setDocument] = useState({})
+    const [viomeData, setViomeData] = useState([])
+    const [viomeFileError, setViomeFileError] = useState(false)
+
+    useEffect(() => {
+        const fetchData = async () => {
+            AsyncStorage.getItem('ViomeData')
+                .then(data => setAuthCode(data))
+                .catch(err => console.log(err))
+        }
+    }, [])
+
+    useEffect(() => {
+        AsyncStorage.setItem('ViomeData', JSON.stringify(viomeData))
+    }, [viomeData])
+
+    const getDocument = async () => {
+        DocumentPicker.getDocumentAsync()
+            .then(doc => {
+                // console.log(doc)
+                if (doc.canceled === false) {
+                    setDocument(doc)
+                }
+            })
+            .catch(err => {
+                console.log('doc error:', err)
+                setViomeFileError('file-not-loaded')
+            })
+    }
 
     useEffect(() => {
         if (isLoading) {
-            setTimeout(() => setIsLoading(false), 1000 * 5)
+            setTimeout(() => setIsLoading(false), 1000 * 4)
         }
     }, [isLoading])
 
     useEffect(() => {
-        // Query the Dexcom API every 60 seconds for new data
-        setInterval((async () => {
-            console.log('hiiii there')
-            if (!!dexcomAuthHelpers.accessToken) {
-                console.log('the access token we are using', new Date(), dexcomAuthHelpers.accessToken)
-
-                const query = new URLSearchParams({
-                    startDate: format(subDays(new Date(), 10), "yyyy-MM-dd'T'hh:mm:ss"),
-                    endDate: format(new Date(), "yyyy-MM-dd'T'hh:mm:ss")
-                }).toString();
-
-                fetch(`https://sandbox-api.dexcom.com/v3/users/self/egvs?${query}`, {
-                    method: 'GET',
-                    headers: {
-                        Authorization: `Bearer ${dexcomAuthHelpers.accessToken}`
-                    }
-                })
-                    .then(async resp => {
-                        const data = JSON.parse(await resp.text());
-                        if (!!(data?.faultString)) {
-                            throw new Error('Invalid access token. Please retry.')
-                        }
-                        else {
-                            setIsLoading(true)
-                            setEGV(data)
-                        }
-                    })
-                    .catch(async (err) => {
-                        // The Dexcom API guarantees data queries will always return 200 OK responses
-                        // Thus, if an error is returned, it's likely b/c the access token is expired so try to refresh
-                        console.log(err)
-                        dexcomAuthHelpers.refreshAccessToken()
-                    })
-            }
-        })(), 1000 * 30)
+        queryData()
     }, [])
+
+    // Query the Dexcom API every 60 seconds for new data
+    useInterval(async () => {
+        await queryData()
+    }, 1000 * 60)
+
+    console.log(isLoading)
+
+    useEffect(() => {
+        console.log('this query')
+        queryData()
+    }, [dexcomAuthHelpers.accessToken])
 
     useEffect(() => {
         console.log('updating plotting data')
 
         if (!!egv?.records) {
-            const data = egv.records.map(x => {
+            const data = egv.records.map((x, i) => {
+                // console.log('time: ', x.displayTime, parse(x.displayTime, "yyyy-MM-dd'T'HH:mm:ss", new Date()))
+
+                if ((i % 5) == 0) {
+                    return {
+                        value: x.value,
+                        label: format(parse(x.displayTime, "yyyy-MM-dd'T'HH:mm:ss", new Date()), 'MM/dd HH:mm'),
+                        labelTextStyle: {
+                            position: 'absolute',
+                            display: 'flex',
+                            flex: 1
+                        }
+                    }
+                }
                 return {
                     value: x.value,
-                    // label: JSON.stringify(x.displayTime) 
+                    labelTextStyle: {
+                        display: 'none'
+                    }
                 }
             })
-            setIsLoading(true)
-            setPlottingData(data)
-        }
-    }, [Object.keys(egv).length])
 
-    console.log('pdata: ', plottingData.length, plottingData.length === 0)
+            setPlottingData([...data].reverse())
+        }
+    }, [egv])
+
+    const queryData = async () => {
+        console.log('hiiii there')
+        if (!!dexcomAuthHelpers.accessToken) {
+            // console.log('the access token we are using', new Date(), dexcomAuthHelpers.accessToken)
+
+            const query = new URLSearchParams({
+                startDate: format(subDays(new Date(), 4), "yyyy-MM-dd'T'hh:mm:ss"),
+                endDate: format(new Date(), "yyyy-MM-dd'T'hh:mm:ss")
+            }).toString();
+
+            fetch(`https://sandbox-api.dexcom.com/v3/users/self/egvs?${query}`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${dexcomAuthHelpers.accessToken}`
+                }
+            })
+                .then(async resp => {
+                    const data = JSON.parse(await resp.text());
+                    if (!!(data?.faultString)) {
+                        throw new Error('Invalid access token. Please retry.')
+                    }
+                    else {
+                        console.log('plot data len: ', plottingData.length)
+                        if (plottingData.length < 10) {
+                            console.log('i am running')
+                            // setIsLoading(true)
+                        }
+                        setEGV(data)
+                    }
+                })
+                .catch(async (err) => {
+                    // The Dexcom API guarantees data queries will always return 200 OK responses
+                    // Thus, if an error is returned, it's likely b/c the access token is expired so try to refresh
+                    console.log('errrr', err)
+                    dexcomAuthHelpers.refreshAccessToken()
+                })
+        }
+    }
 
     return (
         <View style={{ backgroundColor: '#FFF', height: '100%' }}>
+            <View style={{
+                marginVertical: 15,
+                marginHorizontal: 10
+            }}>
+                <Text style={{ color: defaultColors.black.color, fontWeight: 800, paddingBottom: 10, textAlign: 'center' }}>Continuous Glucose Monitoring Data</Text>
+
+                {
+                    !showLineChart ? '' :
+                        <>
+                            <LineChart
+                                yAxisLabelWidth={38}
+                                yAxisLabelContainerStyle={{
+                                    marginRight: 5
+                                }}
+                                endSpacing={0}
+                                data={plottingData}
+                                width={Dimensions.get('screen').width * 0.78}
+                                spacing={40}
+                                xAxisTextNumberOfLines={100}
+                                // xAxisel
+                                // xAxisIndicesHeight={50}
+                                // height={400}
+                                textShiftX={-10}
+                            // rotateLabel
+                            />
+                            <Text style={{ color: defaultColors.darkGray.color, textAlign: 'center', marginTop: -25 }}>Please swipe left/right on chart to see more data.</Text>
+                        </>
+                }
+
+                {
+                    (!!!dexcomAuthHelpers.accessToken || !!!dexcomAuthHelpers.authCode) ?
+                        <Text style={{ color: defaultColors.red.color, marginTop: 10, fontSize: 18 }}>Please sign in to your Dexcom Account on the Profile page.</Text> : ''
+                }
+            </View>
+
+
+            <View style={{ marginVertical: 20, marginHorizontal:10, borderBottomColor: defaultColors.darkGray.color, paddingBottom: 8 }}>
+                <Text style={{ color: defaultColors.black.color, fontWeight: 800, paddingBottom: 10, textAlign: 'center' }}>Viome Gut Microbiome Data</Text>
+
+                {
+                    (viomeData.length > 0) ?
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: 'rgba(22,118,241,255)',
+                                padding: 10,
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                borderRadius: 10,
+                                borderWidth: 2,
+                                borderColor: 'rgba(22,118,241,255)'
+                            }}
+                            onPress={getDocument}
+                        >
+                            <Text style={{ color: defaultColors.white.color, fontWeight: '800' }}>
+                                Load Viome Data
+                            </Text>
+                        </TouchableOpacity>
+                        :
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: '#dc3545',
+                                padding: 10,
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                borderRadius: 10,
+                                borderWidth: 2,
+                                borderColor: '#dc3545'
+                            }}
+                            // onPress={dexcomAuthHelpers.revokeAuthorization}
+                        >
+                            <Text style={{ color: defaultColors.white.color, fontWeight: '800' }}>
+                                Delete Viome Data
+                            </Text>
+                        </TouchableOpacity>
+                }
+                {
+                    (viomeFileError === 'not-a-csv') ?
+                        <Text style={{ color: defaultColors.red.color, marginTop: 10, fontSize: 18 }}>The file does not seem to be a csv file. Please try again :)</Text> : ''
+                }
+                {
+                    (viomeFileError === 'file-not-loaded') ?
+                    <Text style={{ color: defaultColors.red.color, marginTop: 10, fontSize: 18 }}>Could not load file. Please try again. Sorry :)</Text> : ''
+                }
+            </View>
+
             {
                 (isLoading) ?
                     <Modal
@@ -97,33 +281,10 @@ const DataScreen = () => {
                             }}
                             size="large"
                             color={defaultColors.red.color}
+                            animating={isLoading}
                         />
                     </Modal> : ''
             }
-
-            <View>
-                {
-                    (plottingData.length === 0) ? '' :
-                        <>
-                            <LineChart
-                                yAxisLabelWidth={38}
-                                yAxisLabelContainerStyle={{
-                                    marginRight: 5
-                                }}
-                                endSpacing={0}
-                                data={plottingData}
-                                width={Dimensions.get('screen').width * 0.78}
-                                spacing={0.5}
-                            />
-                            <Text style={{ color: defaultColors.darkGray.color, textAlign: 'center', marginTop: -35 }}>Please swipe left/right on chart to see more data.</Text>
-                        </>
-                }
-            </View>
-
-
-            <Text>
-                Upload your viome data
-            </Text>
         </View>
     )
 }

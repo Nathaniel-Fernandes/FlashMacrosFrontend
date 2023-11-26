@@ -109,7 +109,7 @@ const ProfileScreen = (props) => {
         }
     )
 
-    console.log(dexcomAuthHelpers)
+    // console.log(dexcomAuthHelpers)
 
     // whenever the response changes (i.e., the user has completed the OAuth modal), test to see if request was successful or rejected
     useEffect(() => {

@@ -78,7 +78,7 @@ const EditMealModal = () => {
         }
 
         else {
-            console.log('saving meal method 2')
+            // console.log('saving meal method 2')
 
             // get media library permission
             let mediaLibraryPermission = await requestPermission()

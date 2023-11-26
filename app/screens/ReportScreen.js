@@ -1,5 +1,5 @@
 // 3rd party
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { Text, View, Dimensions, ScrollView, StyleSheet } from "react-native";
 import PieChart from 'react-native-pie-chart'
 import { Table, Row, Rows } from 'react-native-reanimated-table'
@@ -10,6 +10,7 @@ import { differenceInDays, parse, eachDayOfInterval, format, isSameDay } from 'd
 // local files
 import { defaultColors } from "../../src/styles/styles";
 import { MealContext } from "../../src/context"
+import { useFocusEffect } from "expo-router/src/useFocusEffect";
 
 const ReportScreen = () => {
     const mealHelpers = useContext(MealContext)
@@ -24,16 +25,27 @@ const ReportScreen = () => {
         return delta
     }
 
+    const [showBarChart, setShowBarChart] = useState(false)
+
+    useFocusEffect(useCallback(() => {
+        setShowBarChart(true)
+
+        return () => {
+            console.log('showing false')
+            setShowBarChart(false)
+        }
+    }))
+
     // Component State
-    const [processedData, setProcessedData] = useState(Object.entries(mealHelpers.data).map(x => { return {...x[1], uuid: x[0]}}).map(convertDate))
-    const [pastThirtyDayData, setPastThirtyDayData] = useState(Object.entries(mealHelpers.data).map(x => { return {...x[1], uuid: x[0]}}).map(convertDate))
+    const [processedData, setProcessedData] = useState(Object.entries(mealHelpers.data).map(x => { return { ...x[1], uuid: x[0] } }).map(convertDate))
+    const [pastThirtyDayData, setPastThirtyDayData] = useState(Object.entries(mealHelpers.data).map(x => { return { ...x[1], uuid: x[0] } }).map(convertDate))
     const [monthlyMacros, setMonthlyMacros] = useState({ proteins: 1, fats: 1, carbs: 1 })
     const [chartData, setChartData] = useState([])
     const [tableData, setTableData] = useState([])
 
     // Data Updaters
     useEffect(() => {
-        setProcessedData(Object.entries(mealHelpers.data).map(x => { return {...x[1], uuid: x[0]}}).map(convertDate).sort(sortMealsByDate))
+        setProcessedData(Object.entries(mealHelpers.data).map(x => { return { ...x[1], uuid: x[0] } }).map(convertDate).sort(sortMealsByDate))
     }, [mealHelpers.data])
 
     useEffect(() => {
@@ -52,7 +64,7 @@ const ReportScreen = () => {
         if (processedData.length == 0) {
             setChartData([])
         }
-        
+
         else {
             const sorted = processedData.sort(sortMealsByDate)
 
@@ -65,7 +77,7 @@ const ReportScreen = () => {
             keys = eachDayOfInterval(interval)
             vals = keys.map(day => sorted.map(meal => isSameDay(meal.date, day) ? meal.CMNP.calories : 0).reduce((a, b) => a + b, 0))
 
-            setChartData(keys.map((key, idx) => { return { label: format(key, 'MM/dd'), value: vals[idx]}}))
+            setChartData(keys.map((key, idx) => { return { label: format(key, 'MM/dd'), value: vals[idx] } }))
         }
     }, [processedData])
 
@@ -149,7 +161,7 @@ const ReportScreen = () => {
                     }
                 </View>
 
-                <View style={{ marginBottom: 20}}>
+                <View style={{ marginBottom: 20 }}>
                     <View style={{ borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, marginBottom: 8, alignItems: 'flex-end' }}>
                         <Text
                             style={{
@@ -161,15 +173,20 @@ const ReportScreen = () => {
                             }}
                         >Calories</Text>
                     </View>
-                    <BarChart
-                        yAxisLabelWidth={38}
-                        yAxisLabelContainerStyle={{
-                            marginRight: 5
-                        }}
-                        endSpacing={0}
-                        data={chartData}
-                        width={Dimensions.get('screen').width*0.78}
-                    />
+
+                    {
+                        !showBarChart ? '' :
+                            <BarChart
+                                yAxisLabelWidth={38}
+                                yAxisLabelContainerStyle={{
+                                    marginRight: 5
+                                }}
+                                endSpacing={0}
+                                data={chartData}
+                                width={Dimensions.get('screen').width * 0.78}
+                            />
+                    }
+
                     <Text style={{ color: defaultColors.darkGray.color, textAlign: 'center', marginTop: -35 }}>Please swipe left on chart to see more days of data.</Text>
                 </View>
 
@@ -186,10 +203,13 @@ const ReportScreen = () => {
                         >Meals</Text>
                     </View>
 
-                    <Table>
-                        <Row data={['Time', 'Picture', 'Cal', 'Protein', 'Fat', 'Carbs']} flexArr={[1.5, 1.5, 1, 1, 1, 1]} textStyle={{ textAlign: 'center', fontWeight: 700 }} style={{ marginBottom: 10 }}></Row>
-                        <Rows data={tableData} textStyle={{ textAlign: 'center' }} flexArr={[1.5, 1.5, 1, 1, 1, 1]} style={{ marginBottom: 10 }}></Rows>
-                    </Table>
+                    {
+                        !showBarChart ? '' :
+                            <Table>
+                                <Row data={['Time', 'Picture', 'Cal', 'Protein', 'Fat', 'Carbs']} flexArr={[1.5, 1.5, 1, 1, 1, 1]} textStyle={{ textAlign: 'center', fontWeight: 700 }} style={{ marginBottom: 10 }}></Row>
+                                <Rows data={tableData} textStyle={{ textAlign: 'center' }} flexArr={[1.5, 1.5, 1, 1, 1, 1]} style={{ marginBottom: 10 }}></Rows>
+                            </Table>
+                    }
                 </View>
             </View>
         </ScrollView>

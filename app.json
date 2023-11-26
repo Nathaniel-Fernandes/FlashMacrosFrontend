@@ -59,7 +59,8 @@
           "clientToken": "bf21f6ff7aaf8c71a1a39dbce3ac0b20",
           "scheme": "fb316702201220506"
         }
-      ]
+      ],
+      "expo-document-picker"
     ],
     "extra": {
       "router": {

@@ -11,6 +11,7 @@ import { makeRedirectUri } from 'expo-auth-session';
 // local files
 import { DexcomAuthContext, DummyMeals, MealContext } from "../src/context";
 import { defaultColors } from '../src/styles/styles'
+import { tr } from 'date-fns/locale';
 
 export default function Layout() {
     const navigation = useNavigation()
@@ -25,20 +26,20 @@ export default function Layout() {
         const fetchData = async () => {
             AsyncStorage.getItem('DexcomAuthCode')
                 .then(data => setAuthCode(data))
-                .catch(err => console.log(err))
+                .catch(err => console.log('DexcomAuthCode error', err))
 
             AsyncStorage.getItem('DexcomAccessToken')
                 .then(data => setAccessToken(data))
-                .catch(err => console.log(err))
+                .catch(err => console.log('DexcomAccessToken error', err))
 
             AsyncStorage.getItem('DexcomRefreshToken')
                 .then(data => setRefreshToken(data))
-                .catch(err => console.log(err))
+                .catch(err => console.log('DexcomRefreshToken', err))
         }
 
         // Call the fetchData function defined above
         fetchData()
-            .catch(console.log)
+            .catch(err => console.log('DexcomAuthHelpers error:', err))
     }, [])
 
     // Save the in-memory data to persistent storage every time a code or token updates
@@ -126,6 +127,8 @@ export default function Layout() {
     const [meals, setMeals] = useState(DummyMeals)
     const [deletingMeals, setDeletingMeals] = useState(false)
     const [editingMeals, setEditingMeals] = useState(false)
+
+    console.log('layout: ', deletingMeals, editingMeals)
 
     const addMeal = (meal, _uuid = null) => {
         if (_uuid === null) {
@@ -295,6 +298,7 @@ export default function Layout() {
                             drawerLabel: "Data",
                             title: "Data",
                         }}
+                        unmountOnBlur={true}
                         name="screens/DataScreen"
                     />
                     <Drawer.Screen
