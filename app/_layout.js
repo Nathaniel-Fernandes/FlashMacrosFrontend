@@ -240,7 +240,7 @@ export default function Layout() {
                         <Drawer.Screen
                             options={{
                                 headerShown: false,
-                                // swipeEnabled: false, // TODO: uncomment in production
+                                swipeEnabled: false, // TODO: uncomment in production
                                 drawerItemStyle: { height: 0 },
                                 unmountOnBlur: true
                             }}
