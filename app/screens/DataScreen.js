@@ -53,6 +53,7 @@ const DataScreen = () => {
     const [egv, setEGV] = useState({})
     const [plottingData, setPlottingData] = useState([])
     const [showLineChart, setShowLineChart] = useState(false)
+    const [showTable, setShowTable] = useState(false)
 
     useFocusEffect(useCallback(() => {
         if (plottingData.length > 5) {
@@ -65,8 +66,19 @@ const DataScreen = () => {
             }, 2000)
         }
 
+        if (viomeData.length > 5) {
+            // console.log(plottingData)
+            setShowTable(true)
+        }
+        else {
+            setTimeout(() => {
+                setShowTable(false)
+            }, 2000)
+        }
+
         return () => {
             setShowLineChart(false)
+            setShowTable(false)
         }
     }, [plottingData]))
 
@@ -118,7 +130,7 @@ const DataScreen = () => {
                 }
             })
             .catch(err => {
-                // console.log('doc error:', err)
+                console.log('doc error:', err)
                 setViomeFileError('file-not-loaded')
             })
     }
@@ -176,7 +188,7 @@ const DataScreen = () => {
     const queryData = async () => {
         // console.log('hiiii there')
         if (!!dexcomAuthHelpers.accessToken) {
-            // console.log('the access token we are using', new Date(), dexcomAuthHelpers.accessToken)
+            console.log('the access token we are using', new Date(), dexcomAuthHelpers.accessToken)
 
             const query = new URLSearchParams({
                 startDate: format(subDays(new Date(), 2), "yyyy-MM-dd'T'hh:mm:ss"),
@@ -211,8 +223,6 @@ const DataScreen = () => {
                 })
         }
     }
-
-    // console.log(viomeData[0])
 
     return (
         <View style={{ backgroundColor: '#FFF', height: '100%' }}>
@@ -298,7 +308,7 @@ const DataScreen = () => {
                     !(viomeFileError === false && viomeData.length > 0) ? '' :
                         <View style={{ marginVertical: 30 }}>
                             {
-                                !showLineChart ? '' :
+                                !showTable ? '' :
                                     <FlatList
                                         data={viomeData}
                                         renderItem={({ item, index }) => <Row data={item} index={index} />}

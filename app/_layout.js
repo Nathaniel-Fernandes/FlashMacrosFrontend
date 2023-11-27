@@ -24,15 +24,15 @@ export default function Layout() {
     useEffect(() => {
         const fetchData = async () => {
             AsyncStorage.getItem('DexcomAuthCode')
-                .then(data => setAuthCode(data))
+                .then(data => setAuthCode(JSON.parse(data)))
                 .catch(err => console.log('DexcomAuthCode error', err))
 
             AsyncStorage.getItem('DexcomAccessToken')
-                .then(data => setAccessToken(data))
+                .then(data => setAccessToken(JSON.parse(data)))
                 .catch(err => console.log('DexcomAccessToken error', err))
 
             AsyncStorage.getItem('DexcomRefreshToken')
-                .then(data => setRefreshToken(data))
+                .then(data => setRefreshToken(JSON.parse(data)))
                 .catch(err => console.log('DexcomRefreshToken', err))
         }
 
@@ -43,18 +43,16 @@ export default function Layout() {
 
     // Save the in-memory data to persistent storage every time a code or token updates
     useEffect(() => {
-        if (!!authCode) {
-            AsyncStorage.setItem('DexcomAuthCode', authCode)
-        }
+        AsyncStorage.setItem('DexcomAuthCode', JSON.stringify(authCode))
+    }, [authCode])
 
-        if (!!accessToken) {
-            AsyncStorage.setItem('DexcomAccessToken', accessToken)
-        }
+    useEffect(() => {
+        AsyncStorage.setItem('DexcomAccessToken', JSON.stringify(accessToken))
+    }, [accessToken, refreshToken])
 
-        if (!!refreshToken) {
-            AsyncStorage.setItem('DexcomRefreshToken', refreshToken)
-        }
-    }, [authCode, accessToken, refreshToken])
+    useEffect(() => {
+        AsyncStorage.setItem('DexcomRefreshToken', JSON.stringify(refreshToken))
+    }, [refreshToken])
 
     // automatically ask for a new acess token if we have an auth code w/o access token
     useEffect(() => {
