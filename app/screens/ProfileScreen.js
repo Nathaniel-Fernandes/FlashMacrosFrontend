@@ -1,54 +1,26 @@
 import React, { useEffect, useState, useContext } from 'react'
-import { Text, View, Image, TextInput, Button } from 'react-native'
+import { Text, View, Image, TextInput, Button, StyleSheet } from 'react-native'
 import { defaultColors } from '../../src/styles/styles'
 import { useNavigation } from 'expo-router/';
-import AsyncStorage from '@react-native-async-storage/async-storage'
 
 // dexcom authentication
 import { makeRedirectUri, useAuthRequest } from 'expo-auth-session';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-import { DexcomAuthContext } from '../../src/context';
-
-const DummyProfile = {
-    name: 'Johanna Doe',
-    email: 'johanna@company.com',
-    heightFeet: '5',
-    heightInches: '5',
-    weight: '130',
-    race: 'White',
-    age: '27',
-    sex: 'F'
-}
+import { DexcomAuthContext, ProfileContext } from '../../src/context';
 
 const ProfileScreen = (props) => {
     const navigation = useNavigation()
 
+    const profileContext = useContext(ProfileContext)
+
     // 0. Profile data, state, helpers
-    const [data, setData] = useState(DummyProfile)
+    const [data, setData] = useState(profileContext.profileData)
     const [editable, setEditable] = useState(false)
     const [validInput, setValidInput] = useState(true)
 
-    // load in the profile data from the persistent on-device local storage, on component startup
     useEffect(() => {
-        const fetchData = async () => {
-            AsyncStorage.getItem('FlashMacrosProfileStorage')
-                .then(data => {
-                    if (data == null) {
-                        throw new Error('No dummy data found. Throwing exception.')
-                    }
-                    else {
-                        setData(JSON.parse(data))
-                    }
-                })
-                .catch(err => {
-                    console.log(err)
-                    AsyncStorage.setItem('FlashMacrosProfileStorage', JSON.stringify(DummyProfile))
-                })
-        }
-
-        fetchData()
-            .catch(console.log)
-    }, [])
+        setData({...profileContext.profileData})
+    }, [profileContext.profileData])
 
     // check if any fields are empty. If so, prevent saving.
     useEffect(() => {
@@ -79,10 +51,10 @@ const ProfileScreen = (props) => {
     // helper: save the in-memory form fields to on-device local storage
     const saveData = async (userData = null) => {
         if (userData === null) {
-            await AsyncStorage.setItem('FlashMacrosProfileStorage', JSON.stringify(data))
+            profileContext.setProfileData({ ...data })
         }
         else {
-            await AsyncStorage.setItem('FlashMacrosProfileStorage', JSON.stringify(userData))
+            profileContext.setProfileData({ ...userData })
         }
     }
 
@@ -108,8 +80,6 @@ const ProfileScreen = (props) => {
             authorizationEndpoint: 'https://sandbox-api.dexcom.com/v2/oauth2/login'
         }
     )
-
-    // console.log(dexcomAuthHelpers)
 
     // whenever the response changes (i.e., the user has completed the OAuth modal), test to see if request was successful or rejected
     useEffect(() => {
@@ -200,7 +170,32 @@ const ProfileScreen = (props) => {
                         ''
                     }
                 </View>
-                <View style={{ marginVertical: 20, borderBottomColor: defaultColors.darkGray.color, paddingBottom: 8 }}>
+                <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-evenly', marginVertical: 10}}>
+                    {
+                        (editable) ?
+                            <Button
+                                title="Save?"
+                                color={validInput ? defaultColors.blue.color : defaultColors.lightGray.color}
+                                disabled={!validInput}
+                                onPress={() => { setEditable(false); saveData() }}
+                            ></Button>
+                            : <Button
+                                title="Edit Profile?"
+                                color={defaultColors.blue.color}
+                                onPress={() => setEditable(true)}
+                            ></Button>
+                    }
+
+                    <Button
+                        title="Delete Profile"
+                        color={defaultColors.red.color}
+                        onPress={() => { profileContext.resetProfile(), navigation.navigate('screens/SignUpScreen')}}
+                    ></Button>
+                </View>
+
+                <View style={{ borderBottomColor: defaultColors.black.color, borderBottomWidth: StyleSheet.hairlineWidth, marginVertical: 20}}></View>
+
+                <View style={{ marginVertical: 10, borderBottomColor: defaultColors.darkGray.color, paddingBottom: 8 }}>
                     <Text style={{ color: defaultColors.red.color, fontWeight: 800, paddingBottom: 10, textAlign: 'center' }}>DexCom API Key</Text>
 
                     {
@@ -245,27 +240,6 @@ const ProfileScreen = (props) => {
                             <Text style={{ color: defaultColors.red.color, marginTop: 10 }}>Authorization denied. Please try again to connect Dexcom account.</Text> : ''
                     }
                 </View>
-
-                {
-                    (editable) ?
-                        <Button
-                            title="Save?"
-                            color={validInput ? defaultColors.blue.color : defaultColors.lightGray.color}
-                            disabled={!validInput}
-                            onPress={() => { setEditable(false); saveData() }}
-                        ></Button>
-                        : <Button
-                            title="Edit Profile?"
-                            color={defaultColors.blue.color}
-                            onPress={() => setEditable(true)}
-                        ></Button>
-                }
-
-                <Button
-                    title="Delete Profile"
-                    color={defaultColors.red.color}
-                    onPress={() => saveData(DummyProfile).then(navigation.navigate('screens/SignUpScreen'))}
-                ></Button>
             </View>
         </View>
     )

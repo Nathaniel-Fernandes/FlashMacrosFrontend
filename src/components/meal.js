@@ -4,6 +4,23 @@ import { FlatList, View, Text } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { defaultColors } from "../styles/styles";
+import { differenceInDays, parse } from 'date-fns'
+
+// Helpers
+const convertDate = (meal) => {
+    return { ...meal, date: parse(meal['title'], 'MM/dd/yyyy p', new Date()) }
+}
+
+const sortMealsByDate = (mealObj1, mealObj2) => {
+    const delta = mealObj2['date'] - mealObj1['date']
+    return delta
+}
+
+const convertMealObjArr = (mealObjs) => Object.entries(mealObjs).map(x => { return { ...x[1], uuid: x[0] } }).map(convertDate).sort(sortMealsByDate)
+
+const getMostRecentMeals = (mealArr, threshold) => {
+    return mealArr.filter(x => differenceInDays(new Date(), x['date']) < threshold).sort(sortMealsByDate)
+}
 
 const Meal = (props) => {
     let CMNP = props.item.CMNP
@@ -69,6 +86,7 @@ const Meal = (props) => {
                         width: 300,
                         height: props.item.img.height / (props.item.img.width / 300),
                         marginTop: 10,
+                        borderRadius: 10
                     }}
                 ></Image>
             }
@@ -76,4 +94,4 @@ const Meal = (props) => {
     )
 }
 
-export default Meal
+export { Meal, convertDate, sortMealsByDate, convertMealObjArr, getMostRecentMeals }

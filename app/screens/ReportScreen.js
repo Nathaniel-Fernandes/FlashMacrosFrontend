@@ -11,19 +11,10 @@ import { differenceInDays, parse, eachDayOfInterval, format, isSameDay } from 'd
 import { defaultColors } from "../../src/styles/styles";
 import { MealContext } from "../../src/context"
 import { useFocusEffect } from "expo-router/src/useFocusEffect";
+import { convertDate, sortMealsByDate, convertMealObjArr, getMostRecentMeals } from "../../src/components/meal";
 
 const ReportScreen = () => {
     const mealHelpers = useContext(MealContext)
-
-    // Helpers
-    const convertDate = (meal) => {
-        return { ...meal, date: parse(meal['title'], 'MM/dd/yyyy p', new Date()) }
-    }
-
-    const sortMealsByDate = (mealObj1, mealObj2) => {
-        const delta = mealObj2['date'] - mealObj1['date']
-        return delta
-    }
 
     const [showBarChart, setShowBarChart] = useState(false)
 
@@ -31,8 +22,8 @@ const ReportScreen = () => {
         setShowBarChart(true)
 
         return () => {
-            console.log('showing false')
-            setShowBarChart(false)
+            // console.log('showing false')
+            // setShowBarChart(false)
         }
     }))
 
@@ -45,11 +36,11 @@ const ReportScreen = () => {
 
     // Data Updaters
     useEffect(() => {
-        setProcessedData(Object.entries(mealHelpers.data).map(x => { return { ...x[1], uuid: x[0] } }).map(convertDate).sort(sortMealsByDate))
+        setProcessedData(convertMealObjArr(mealHelpers.data))
     }, [mealHelpers.data])
 
     useEffect(() => {
-        setPastThirtyDayData(processedData.filter(x => differenceInDays(new Date(), x['date']) < 30).sort(sortMealsByDate))
+        setPastThirtyDayData(getMostRecentMeals(processedData, 30))
     }, [processedData])
 
     useEffect(() => {

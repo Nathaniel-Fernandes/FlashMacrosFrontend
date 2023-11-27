@@ -14,6 +14,7 @@
     "@react-native-picker/picker": "2.4.10",
     "@react-navigation/drawer": "^6.6.6",
     "@types/react": "~18.2.14",
+    "csvtojson": "^2.0.10",
     "date-fns": "^2.30.0",
     "expo": "~49.0.15",
     "expo-auth-session": "~5.0.2",
@@ -21,6 +22,7 @@
     "expo-constants": "~14.4.2",
     "expo-crypto": "~12.4.1",
     "expo-dev-client": "~2.4.12",
+    "expo-document-picker": "~11.5.4",
     "expo-file-system": "~15.4.5",
     "expo-image": "~1.3.5",
     "expo-linking": "~5.0.2",
@@ -50,8 +52,7 @@
     "react-native-svg": "^14.0.0",
     "react-native-uuid": "^2.0.1",
     "react-native-vision-camera": "^3.6.9",
-    "typescript": "^5.1.3",
-    "expo-document-picker": "~11.5.4"
+    "typescript": "^5.1.3"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

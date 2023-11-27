@@ -7,7 +7,7 @@ import { parse } from "date-fns";
 import { defaultColors } from "../../src/styles/styles";
 import { MealContext } from "../../src/context";
 import { TextInput } from "react-native-gesture-handler";
-import Meal from "../../src/components/meal";
+import { Meal } from "../../src/components/meal";
 
 const MealScreen = () => {
     const mealHelpers = useContext(MealContext)

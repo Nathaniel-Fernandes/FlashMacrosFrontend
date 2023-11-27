@@ -1,6 +1,6 @@
 // 3rd party
 import React, { useEffect, useState } from 'react'
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { useNavigation } from 'expo-router/';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,9 +9,8 @@ import uuid from 'react-native-uuid'
 import { makeRedirectUri } from 'expo-auth-session';
 
 // local files
-import { DexcomAuthContext, DummyMeals, MealContext } from "../src/context";
+import { DexcomAuthContext, DummyProfile, DummyMeals, MealContext, ProfileContext } from "../src/context";
 import { defaultColors } from '../src/styles/styles'
-import { tr } from 'date-fns/locale';
 
 export default function Layout() {
     const navigation = useNavigation()
@@ -65,9 +64,9 @@ export default function Layout() {
     }, [authCode, accessToken])
 
     const getAccessToken = async (refreshToken = null) => {
-        console.log('trying to get access token')
+        // console.log('trying to get access token')
         if (!!authCode) {
-            console.log('trying to get access token: auth code')
+            // console.log('trying to get access token: auth code')
             let config = {
                 client_id: '3ljSynAhTDK6Uq8vxYz7cdzHZPtOEknS',
                 client_secret: '5wRd0vhpERTgwQS9', // [ECEN 404 TODO]: move the clientSecret to the server to be more secure
@@ -94,7 +93,7 @@ export default function Layout() {
             const data = JSON.parse(await resp.text())
 
             if (data.access_token) {
-                console.log('setting new tokens trying to get access token: auth code')
+                // console.log('setting new tokens trying to get access token: auth code')
                 setRefreshToken(data.refresh_token)
                 setAccessToken(data.access_token)
             }
@@ -104,7 +103,7 @@ export default function Layout() {
     const refreshAccessToken = async () => {
         try {
             if (!!refreshToken) {
-                console.log('refreshing token')
+                // console.log('refreshing token')
                 getAccessToken(refreshToken)
             }
             else {
@@ -112,7 +111,7 @@ export default function Layout() {
             }
         }
         catch (e) {
-            console.log('revoking authorization')
+            // console.log('revoking authorization')
             revokeAuthorization()
         }
     }
@@ -128,7 +127,7 @@ export default function Layout() {
     const [deletingMeals, setDeletingMeals] = useState(false)
     const [editingMeals, setEditingMeals] = useState(false)
 
-    console.log('layout: ', deletingMeals, editingMeals)
+    // console.log('layout: ', deletingMeals, editingMeals)
 
     const addMeal = (meal, _uuid = null) => {
         if (_uuid === null) {
@@ -177,6 +176,38 @@ export default function Layout() {
         AsyncStorage.setItem('FlashMacrosMealsData', JSON.stringify(meals))
     }, [meals])
 
+    // 2. Define the in-memory data storage for the profile information
+    const [profileData, setProfileData] = useState(DummyProfile)
+
+    // Load in the saved profile from the on-device local storage, one time on component start up
+    useEffect(() => {
+        const fetchData = async () => {
+            const data = await AsyncStorage.getItem('FlashMacrosProfileStorage')
+
+            if (data == null) {
+                throw new Error('No dummy data found for profile. Throwing exception.')
+            }
+            else {
+                setProfileData(JSON.parse(data))
+            }
+        }
+
+        fetchData()
+            .catch(err => {
+                console.log(err)
+                setProfileData(DummyProfile)
+            })
+    }, [])
+
+    // Save the in-memory profile data to persistent storage every time the in-memory profile changes
+    useEffect(() => {
+        AsyncStorage.setItem('FlashMacrosProfileStorage', JSON.stringify(profileData))
+    }, [profileData])
+
+    const resetProfile = () => {
+        setProfileData({...DummyProfile})
+    }
+
     // Define the route layout of the app. Include the:
     //  > name of each screen
     //  > route-specific styling parameters
@@ -204,130 +235,132 @@ export default function Layout() {
                 revokeAuthorization,
                 refreshAccessToken
             }}>
-                <Drawer screenOptions={{
-                    headerTintColor: defaultColors.red.color,
-                }}>
-                    <Drawer.Screen
-                        options={{
-                            headerShown: false,
-                            // swipeEnabled: false, // TODO: uncomment in production
-                            drawerItemStyle: { height: 0 },
-                            unmountOnBlur: true
-                        }}
-                        name="index"
-                    />
+                <ProfileContext.Provider value={{ profileData, setProfileData, resetProfile }}>
+                    <Drawer screenOptions={{
+                        headerTintColor: defaultColors.red.color,
+                    }}>
+                        <Drawer.Screen
+                            options={{
+                                headerShown: false,
+                                // swipeEnabled: false, // TODO: uncomment in production
+                                drawerItemStyle: { height: 0 },
+                                unmountOnBlur: true
+                            }}
+                            name="index"
+                        />
 
-                    <Drawer.Screen
-                        options={{
-                            headerShown: false,
-                            swipeEnabled: false,
-                            drawerItemStyle: { height: 0 },
-                            unmountOnBlur: true
-                        }}
-                        name="screens/ForgotPassword"
-                    />
+                        <Drawer.Screen
+                            options={{
+                                headerShown: false,
+                                swipeEnabled: false,
+                                drawerItemStyle: { height: 0 },
+                                unmountOnBlur: true
+                            }}
+                            name="screens/ForgotPassword"
+                        />
 
-                    <Drawer.Screen
-                        options={{
-                            headerShown: false,
-                            swipeEnabled: false,
-                            drawerItemStyle: { height: 0 },
-                            unmountOnBlur: true
-                        }}
-                        name="screens/SignUpScreen"
-                    />
+                        <Drawer.Screen
+                            options={{
+                                headerShown: false,
+                                swipeEnabled: false,
+                                drawerItemStyle: { height: 0 },
+                                unmountOnBlur: true
+                            }}
+                            name="screens/SignUpScreen"
+                        />
 
-                    <Drawer.Screen
-                        options={{
-                            drawerLabel: "Home",
-                            title: "Home",
-                            drawerActiveTintColor: defaultColors.red.color,
-                            drawerActiveBackgroundColor: defaultColors.lightRed.color,
-                        }}
-                        name="screens/HomeScreen"
-                    />
-                    {/* Customize the header to have an Add Meals & Delete Meals button for this screen */}
-                    <Drawer.Screen
-                        options={{
-                            drawerActiveTintColor: defaultColors.red.color,
-                            drawerActiveBackgroundColor: defaultColors.lightRed.color,
-                            drawerLabel: "Meals",
-                            title: "Meals",
-                            headerRight: () => (
-                                <View
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection: 'row',
-                                        justifyContent: 'flex-end',
-                                        alignItems: 'baseline',
-                                        gap: 3
-                                    }}
-                                >
-                                    <Text
-                                        onPress={() => Object.keys(meals).length > 0 ? (setEditingMeals(true), setDeletingMeals(false)) : ''}
+                        <Drawer.Screen
+                            options={{
+                                drawerLabel: "Home",
+                                title: "Home",
+                                drawerActiveTintColor: defaultColors.red.color,
+                                drawerActiveBackgroundColor: defaultColors.lightRed.color,
+                            }}
+                            name="screens/HomeScreen"
+                        />
+                        {/* Customize the header to have an Add Meals & Delete Meals button for this screen */}
+                        <Drawer.Screen
+                            options={{
+                                drawerActiveTintColor: defaultColors.red.color,
+                                drawerActiveBackgroundColor: defaultColors.lightRed.color,
+                                drawerLabel: "Meals",
+                                title: "Meals",
+                                headerRight: () => (
+                                    <View
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            justifyContent: 'flex-end',
+                                            alignItems: 'baseline',
+                                            gap: 3
+                                        }}
                                     >
-                                        <Ionicons name='pencil-outline' size={24} color={defaultColors.red.color} />
-                                    </Text>
-                                    <Text
-                                        onPress={() => Object.keys(meals).length > 0 ? (setDeletingMeals(true), setEditingMeals(false)) : ''}
-                                    >
-                                        <Ionicons name='trash-outline' size={26} color={defaultColors.red.color} />
-                                    </Text>
-                                    <Text
-                                        style={{ color: defaultColors.red.color, fontSize: 30, marginRight: 10 }}
-                                        onPress={() => { setDeletingMeals(false), setEditingMeals(false), navigation.navigate('screens/AddMeal') }}
-                                    >+</Text>
-                                </View>
-                            )
-                        }}
-                        name="screens/MealScreen"
-                    />
-                    <Drawer.Screen
-                        options={{
-                            drawerActiveTintColor: defaultColors.red.color,
-                            drawerActiveBackgroundColor: defaultColors.lightRed.color,
-                            drawerLabel: "Reports",
-                            title: "Reports",
-                        }}
-                        name="screens/ReportScreen"
-                    />
-                    <Drawer.Screen
-                        options={{
-                            drawerActiveTintColor: defaultColors.red.color,
-                            drawerActiveBackgroundColor: defaultColors.lightRed.color,
-                            drawerLabel: "Data",
-                            title: "Data",
-                        }}
-                        unmountOnBlur={true}
-                        name="screens/DataScreen"
-                    />
-                    <Drawer.Screen
-                        options={{
-                            drawerActiveTintColor: defaultColors.red.color,
-                            drawerActiveBackgroundColor: defaultColors.lightRed.color,
-                            drawerLabel: "Profile",
-                            title: "Profile",
-                        }}
-                        name="screens/ProfileScreen"
-                    />
-                    <Drawer.Screen
-                        options={{
-                            drawerItemStyle: { height: 0 },
-                            title: "Add Meal",
-                            headerShown: false,
-                        }}
-                        name="screens/AddMeal"
-                    />
-                    <Drawer.Screen
-                        options={{
-                            drawerItemStyle: { height: 0 },
-                            title: "Edit Meal",
-                            headerShown: false,
-                        }}
-                        unmountOnBlur={true}
-                        name="screens/EditMeal"
-                    />
-                </Drawer>
+                                        <Text
+                                            onPress={() => Object.keys(meals).length > 0 ? (setEditingMeals(true), setDeletingMeals(false)) : ''}
+                                        >
+                                            <Ionicons name='pencil-outline' size={24} color={defaultColors.red.color} />
+                                        </Text>
+                                        <Text
+                                            onPress={() => Object.keys(meals).length > 0 ? (setDeletingMeals(true), setEditingMeals(false)) : ''}
+                                        >
+                                            <Ionicons name='trash-outline' size={26} color={defaultColors.red.color} />
+                                        </Text>
+                                        <Text
+                                            style={{ color: defaultColors.red.color, fontSize: 30, marginRight: 10 }}
+                                            onPress={() => { setDeletingMeals(false), setEditingMeals(false), navigation.navigate('screens/AddMeal') }}
+                                        >+</Text>
+                                    </View>
+                                )
+                            }}
+                            name="screens/MealScreen"
+                        />
+                        <Drawer.Screen
+                            options={{
+                                drawerActiveTintColor: defaultColors.red.color,
+                                drawerActiveBackgroundColor: defaultColors.lightRed.color,
+                                drawerLabel: "Reports",
+                                title: "Reports",
+                            }}
+                            name="screens/ReportScreen"
+                        />
+                        <Drawer.Screen
+                            options={{
+                                drawerActiveTintColor: defaultColors.red.color,
+                                drawerActiveBackgroundColor: defaultColors.lightRed.color,
+                                drawerLabel: "Data",
+                                title: "Data",
+                            }}
+                            unmountOnBlur={true}
+                            name="screens/DataScreen"
+                        />
+                        <Drawer.Screen
+                            options={{
+                                drawerActiveTintColor: defaultColors.red.color,
+                                drawerActiveBackgroundColor: defaultColors.lightRed.color,
+                                drawerLabel: "Profile",
+                                title: "Profile",
+                            }}
+                            name="screens/ProfileScreen"
+                        />
+                        <Drawer.Screen
+                            options={{
+                                drawerItemStyle: { height: 0 },
+                                title: "Add Meal",
+                                headerShown: false,
+                            }}
+                            name="screens/AddMeal"
+                        />
+                        <Drawer.Screen
+                            options={{
+                                drawerItemStyle: { height: 0 },
+                                title: "Edit Meal",
+                                headerShown: false,
+                            }}
+                            unmountOnBlur={true}
+                            name="screens/EditMeal"
+                        />
+                    </Drawer>
+                </ProfileContext.Provider>
             </DexcomAuthContext.Provider>
         </MealContext.Provider>
     )

@@ -37,6 +37,23 @@ const DummyMeals = {
   }
 }
 
+const DummyProfile = {
+  name: 'Johanna Doe',
+  email: 'johanna@company.com',
+  heightFeet: '5',
+  heightInches: '5',
+  weight: '130',
+  race: 'White',
+  age: '27',
+  sex: 'F'
+}
+
+const ProfileContext = createContext({
+  profileData: DummyProfile,
+  setProfileData: () => {},
+  resetProfile: () => {}
+})
+
 // Creating a Context enables deeply-nested child components to access the global, in-memory source of truth data store
 // Reference: https://react.dev/reference/react/createContext
 const MealContext = createContext({
@@ -62,4 +79,4 @@ const DexcomAuthContext = createContext({
   refreshAccessToken: () => {}
 })
 
-export { DummyMeals, MealContext, DexcomAuthContext }
+export { DummyMeals, DummyProfile, MealContext, DexcomAuthContext, ProfileContext }

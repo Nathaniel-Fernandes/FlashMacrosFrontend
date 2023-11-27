@@ -4,11 +4,16 @@ import Modal from "react-native-modal";
 import { differenceInDays, format, parse, subDays } from "date-fns";
 import { LineChart, BarChart } from "react-native-gifted-charts";
 import * as DocumentPicker from 'expo-document-picker';
+// import { Table, Row, Rows } from 'react-native-reanimated-table'
+
+// import csv from 'csvtojson'
 
 import { DexcomAuthContext } from "../../src/context";
 import { defaultColors } from "../../src/styles/styles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "expo-router/src/useFocusEffect";
+import { readAsStringAsync } from "expo-file-system";
+import { FlatList } from "react-native-gesture-handler";
 
 // Custom hook to fix issues w/ setInterval not remembering state: https://overreacted.io/making-setinterval-declarative-with-react-hooks/
 function useInterval(callback, delay) {
@@ -31,6 +36,16 @@ function useInterval(callback, delay) {
     }, [delay]);
 }
 
+const Row = (props) => {
+    return (
+        <View style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'row', flexGrow: 1, textAlign: 'center', marginBottom: props.index === 0 ? 10 : 30 }}>
+            <Text style={{ width: '33%', textAlign: 'center', fontWeight: props.index == 0 ? 800 : 400 }}>{props.data[0]}</Text>
+            <Text style={{ width: '33%', textAlign: 'center', fontWeight: props.index == 0 ? 800 : 400 }}>{props.data[1]}</Text>
+            <Text style={{ width: '33%', textAlign: 'center', fontWeight: props.index == 0 ? 800 : 400 }}>{props.data[2]}</Text>
+        </View>
+    )
+}
+
 const DataScreen = () => {
     const dexcomAuthHelpers = useContext(DexcomAuthContext)
 
@@ -41,11 +56,13 @@ const DataScreen = () => {
 
     useFocusEffect(useCallback(() => {
         if (plottingData.length > 5) {
-            console.log(plottingData)
+            // console.log(plottingData)
             setShowLineChart(true)
         }
         else {
-            setShowLineChart(false)
+            setTimeout(() => {
+                setShowLineChart(false)
+            }, 2000)
         }
 
         return () => {
@@ -60,25 +77,48 @@ const DataScreen = () => {
     useEffect(() => {
         const fetchData = async () => {
             AsyncStorage.getItem('ViomeData')
-                .then(data => setAuthCode(data))
+                .then(data => setViomeData(JSON.parse(data)))
+                .catch(err => console.log(err))
+
+            AsyncStorage.getItem('ViomeFileData')
+                .then(doc => setDocument(JSON.parse(doc)))
                 .catch(err => console.log(err))
         }
+
+        fetchData()
+            .catch(err => {
+                console.log(err)
+            })
     }, [])
 
     useEffect(() => {
         AsyncStorage.setItem('ViomeData', JSON.stringify(viomeData))
     }, [viomeData])
 
+    useEffect(() => {
+        AsyncStorage.setItem('ViomeFileData', JSON.stringify(document))
+    }, [document])
+
     const getDocument = async () => {
         DocumentPicker.getDocumentAsync()
-            .then(doc => {
-                // console.log(doc)
+            .then(async doc => {
                 if (doc.canceled === false) {
                     setDocument(doc)
+                    // console.log(doc)
+                    if (doc.assets.length >= 1 && doc.assets[0].mimeType.includes('csv')) {
+                        let data = await readAsStringAsync(doc.assets[0].uri)
+
+                        let parsed = data.split('\n').map(row => row.split(','))
+                        setViomeData(parsed)
+                        setViomeFileError(false)
+                    }
+                    else {
+                        setViomeFileError('not-a-csv')
+                    }
                 }
             })
             .catch(err => {
-                console.log('doc error:', err)
+                // console.log('doc error:', err)
                 setViomeFileError('file-not-loaded')
             })
     }
@@ -98,15 +138,13 @@ const DataScreen = () => {
         await queryData()
     }, 1000 * 60)
 
-    console.log(isLoading)
-
     useEffect(() => {
-        console.log('this query')
+        // console.log('this query')
         queryData()
     }, [dexcomAuthHelpers.accessToken])
 
     useEffect(() => {
-        console.log('updating plotting data')
+        // console.log('updating plotting data')
 
         if (!!egv?.records) {
             const data = egv.records.map((x, i) => {
@@ -136,12 +174,12 @@ const DataScreen = () => {
     }, [egv])
 
     const queryData = async () => {
-        console.log('hiiii there')
+        // console.log('hiiii there')
         if (!!dexcomAuthHelpers.accessToken) {
             // console.log('the access token we are using', new Date(), dexcomAuthHelpers.accessToken)
 
             const query = new URLSearchParams({
-                startDate: format(subDays(new Date(), 4), "yyyy-MM-dd'T'hh:mm:ss"),
+                startDate: format(subDays(new Date(), 2), "yyyy-MM-dd'T'hh:mm:ss"),
                 endDate: format(new Date(), "yyyy-MM-dd'T'hh:mm:ss")
             }).toString();
 
@@ -157,9 +195,9 @@ const DataScreen = () => {
                         throw new Error('Invalid access token. Please retry.')
                     }
                     else {
-                        console.log('plot data len: ', plottingData.length)
+                        // console.log('plot data len: ', plottingData.length)
                         if (plottingData.length < 10) {
-                            console.log('i am running')
+                            // console.log('i am running')
                             // setIsLoading(true)
                         }
                         setEGV(data)
@@ -168,11 +206,13 @@ const DataScreen = () => {
                 .catch(async (err) => {
                     // The Dexcom API guarantees data queries will always return 200 OK responses
                     // Thus, if an error is returned, it's likely b/c the access token is expired so try to refresh
-                    console.log('errrr', err)
+                    // console.log('errrr', err)
                     dexcomAuthHelpers.refreshAccessToken()
                 })
         }
     }
+
+    // console.log(viomeData[0])
 
     return (
         <View style={{ backgroundColor: '#FFF', height: '100%' }}>
@@ -190,16 +230,12 @@ const DataScreen = () => {
                                 yAxisLabelContainerStyle={{
                                     marginRight: 5
                                 }}
-                                endSpacing={0}
+                                endSpacing={15}
                                 data={plottingData}
                                 width={Dimensions.get('screen').width * 0.78}
                                 spacing={40}
                                 xAxisTextNumberOfLines={100}
-                                // xAxisel
-                                // xAxisIndicesHeight={50}
-                                // height={400}
                                 textShiftX={-10}
-                            // rotateLabel
                             />
                             <Text style={{ color: defaultColors.darkGray.color, textAlign: 'center', marginTop: -25 }}>Please swipe left/right on chart to see more data.</Text>
                         </>
@@ -211,12 +247,11 @@ const DataScreen = () => {
                 }
             </View>
 
-
-            <View style={{ marginVertical: 20, marginHorizontal:10, borderBottomColor: defaultColors.darkGray.color, paddingBottom: 8 }}>
+            <View style={{ marginVertical: 20, marginHorizontal: 10, borderBottomColor: defaultColors.darkGray.color, paddingBottom: 8 }}>
                 <Text style={{ color: defaultColors.black.color, fontWeight: 800, paddingBottom: 10, textAlign: 'center' }}>Viome Gut Microbiome Data</Text>
 
                 {
-                    (viomeData.length > 0) ?
+                    (viomeData.length === 0) ?
                         <TouchableOpacity
                             style={{
                                 backgroundColor: 'rgba(22,118,241,255)',
@@ -244,7 +279,7 @@ const DataScreen = () => {
                                 borderWidth: 2,
                                 borderColor: '#dc3545'
                             }}
-                            // onPress={dexcomAuthHelpers.revokeAuthorization}
+                            onPress={() => { setDocument({}), setViomeData([]) }}
                         >
                             <Text style={{ color: defaultColors.white.color, fontWeight: '800' }}>
                                 Delete Viome Data
@@ -256,8 +291,24 @@ const DataScreen = () => {
                         <Text style={{ color: defaultColors.red.color, marginTop: 10, fontSize: 18 }}>The file does not seem to be a csv file. Please try again :)</Text> : ''
                 }
                 {
-                    (viomeFileError === 'file-not-loaded') ?
-                    <Text style={{ color: defaultColors.red.color, marginTop: 10, fontSize: 18 }}>Could not load file. Please try again. Sorry :)</Text> : ''
+                    (viomeFileError === 'file-not-loaded' && viomeData.length !== 0) ?
+                        <Text style={{ color: defaultColors.red.color, marginTop: 10, fontSize: 18 }}>Could not load file. Please try again. Sorry :)</Text> : ''
+                }
+                {
+                    !(viomeFileError === false && viomeData.length > 0) ? '' :
+                        <View style={{ marginVertical: 30 }}>
+                            {
+                                !showLineChart ? '' :
+                                    <FlatList
+                                        data={viomeData}
+                                        renderItem={({ item, index }) => <Row data={item} index={index} />}
+                                        removeClippedSubviews={true}
+
+                                    >
+                                    </FlatList>
+                            }
+
+                        </View>
                 }
             </View>
 

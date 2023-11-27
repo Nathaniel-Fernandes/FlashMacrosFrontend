@@ -1,6 +1,6 @@
 // 3rd party
 import React, { useState } from "react";
-import { Text, TextInput, View, Button, Image, ScrollView } from "react-native";
+import { Text, TextInput, View, Button, Image, ScrollView, KeyboardAvoidingView } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { Link } from "expo-router";
 import PasswordValidate, { VALIDATION_RULES_KEYS } from 'react-native-password-validate-checklist';
@@ -25,10 +25,10 @@ const SignUpScreen = () => {
     ];
 
     return (
-        <View style={{ backgroundColor: '#FFF', height: '100%' }}>
+        <KeyboardAvoidingView style={{ backgroundColor: '#FFF', minHeight: '100%' }} behavior="padding">
             {/* Use "keyboardShouldPersistTaps='handled' with a <ScrollView> so clicks off the text-input will close the keyboard" */}
             <ScrollView
-                style={{ marginHorizontal: 20, marginVertical: 25, marginTop: 60 }}
+                style={{ marginHorizontal: 20, marginTop: 25, marginTop: 60 }}
                 keyboardShouldPersistTaps='handled'
             >
                 <View style={{ justifyContent: 'center', alignItems: 'center', marginVertical: 20 }}>
@@ -122,7 +122,7 @@ const SignUpScreen = () => {
                     </Link>
                 </Text>
             </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     )
 }
 

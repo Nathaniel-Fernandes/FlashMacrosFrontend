@@ -56,7 +56,7 @@ const EditMealModal = () => {
 
     const saveMeal = async () => {
         if (imgTempURI === mealHelpers.data[uuid].img.URI) {
-            console.log('saving meal method 1')
+            // console.log('saving meal method 1')
 
             const mealObj = {
                 'title': mealHelpers.data[uuid].title,
