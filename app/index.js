@@ -102,7 +102,7 @@ const SignInScreen = () => {
                         ></Button>
                     </Link>
 
-                    <Text style={{ textAlign: 'center', ...defaultColors.darkGray }}>or use one of your social profiles</Text>
+                    <Text style={{ textAlign: 'center', ...defaultColors.darkGray, marginTop: 30 }}>Or use one of your social profiles</Text>
 
                     <View style={{
                         display: 'flex',
