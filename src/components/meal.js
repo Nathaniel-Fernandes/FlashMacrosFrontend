@@ -67,7 +67,7 @@ const Meal = (props) => {
             {Object.keys(CMNP).length !== 0 ?
                 <Text
                     style={{ ...defaultColors.blue, marginTop: 10 }}
-                >{`Calories: ${CMNP.calories}; Protein: ${CMNP.proteins}; Fat: ${CMNP.fats}; Carbs: ${CMNP.carbs}`}</Text>
+                >{`Calories: ${CMNP.calories.mean} (±${CMNP.calories.CI}); Protein: ${CMNP.proteins.mean}g (±${CMNP.proteins.CI}); Fat: ${CMNP.fats.mean}g (±${CMNP.fats.CI}); Carbs: ${CMNP.carbs.mean}g (±${CMNP.carbs.CI})`}</Text>
                 : ''
             }
 
@@ -88,6 +88,7 @@ const Meal = (props) => {
                         marginTop: 10,
                         borderRadius: 10
                     }}
+                    alt="Image for Meal"
                 ></Image>
             }
         </View>

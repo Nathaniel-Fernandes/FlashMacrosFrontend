@@ -5,7 +5,6 @@ import { defaultColors } from '../../src/styles/styles';
 import { Image } from 'expo-image'
 import { useNavigation, useLocalSearchParams } from 'expo-router';
 import { MealContext } from '../../src/context';
-import { format } from 'date-fns'
 import Camera from '../../src/components/camera';
 import * as MediaLibrary from 'expo-media-library';
 
@@ -62,10 +61,22 @@ const EditMealModal = () => {
                 'title': mealHelpers.data[uuid].title,
                 'description': mealDescription,
                 'CMNP': {
-                    'calories': Math.round(500 * (1 + Math.random())),
-                    'proteins': Math.round(100 * (0.5 + Math.random())),
-                    'fats': Math.round(20 * (1 + Math.random())),
-                    'carbs': Math.round(50 * (1 + Math.random()))
+                    'calories': {
+                        'mean': Math.round(500 * (1 + Math.random())),
+                        'CI': Math.round(25 * (1 + Math.random())),
+                    },
+                    'proteins': {
+                        'mean': Math.round(100 * (0.5 + Math.random())),
+                        'CI': Math.round(10 * (0.5 + Math.random())),
+                    },
+                    'fats': {
+                        'mean': Math.round(20 * (1 + Math.random())),
+                        'CI': Math.round(5 * (1 + Math.random()))
+                    },
+                    'carbs': {
+                        'mean': Math.round(50 * (1 + Math.random())),
+                        'CI': Math.round(10 * (1 + Math.random())),
+                    }
                 },
                 'tags': mealTags.split(','),
                 'img': {
@@ -89,10 +100,22 @@ const EditMealModal = () => {
                         'title': mealHelpers.data[uuid].title,
                         'description': mealDescription,
                         'CMNP': {
-                            'calories': Math.round(500 * (1 + Math.random())),
-                            'proteins': Math.round(100 * (0.5 + Math.random())),
-                            'fats': Math.round(20 * (1 + Math.random())),
-                            'carbs': Math.round(50 * (1 + Math.random()))
+                            'calories': {
+                                'mean': Math.round(500 * (1 + Math.random())),
+                                'CI': Math.round(25 * (1 + Math.random())),
+                            },
+                            'proteins': {
+                                'mean': Math.round(100 * (0.5 + Math.random())),
+                                'CI': Math.round(10 * (0.5 + Math.random())),
+                            },
+                            'fats': {
+                                'mean': Math.round(20 * (1 + Math.random())),
+                                'CI': Math.round(5 * (1 + Math.random()))
+                            },
+                            'carbs': {
+                                'mean': Math.round(50 * (1 + Math.random())),
+                                'CI': Math.round(10 * (1 + Math.random())),
+                            }
                         },
                         'tags': mealTags.split(','),
                         'img': {
@@ -168,6 +191,7 @@ const EditMealModal = () => {
                                 marginTop: 10,
                                 alignSelf: 'center',
                             }}
+                            alt="Image Preview on Meal Screen"
                         />
                 }
 

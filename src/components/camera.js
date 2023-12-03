@@ -1,11 +1,18 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { View, TouchableOpacity, StyleSheet, Text, Image } from 'react-native'
-import { Camera, NoCameraDeviceError, useCameraDevice } from 'react-native-vision-camera'
+import { Camera, NoCameraDeviceError, useCameraDevice, useCameraDevices } from 'react-native-vision-camera'
 import { defaultColors } from '../styles/styles'
 
 const CameraComponent = (props) => {
     // 1. Set up variables needed to use the camera
-    const device = useCameraDevice('back')
+   
+    const devices = Camera.getAvailableCameraDevices()
+    const [deviceSide, setDeviceSide] = useState('front')
+
+    devices.map(c => console.log(c.position, c.hardwareLevel, c.physicalDevices, c.physicalDevices))
+    const device = devices.find((d) => (d.position === deviceSide))
+
+    // let device = useCameraDevice('back')
     const camera = useRef(null);
 
     const [error, setError] = useState(false)
@@ -51,6 +58,17 @@ const CameraComponent = (props) => {
     }, [cameraPermission])
 
     // 3. helper functions to take the photo & send results to parent component (i.e., AddMeals component)
+    const flipCamera = () => {
+        if (device.position === 'back') {
+            // setDevice(useCameraDevice('front'))
+            setDeviceSide('front')
+        }
+        else {
+            // setDevice(useCameraDevice('back'))
+            setDeviceSide('back')
+        }
+    }
+
     const capturePhoto = async () => {
         if (camera.current !== null) {
             const photo = await camera.current.takePhoto({
@@ -100,6 +118,22 @@ const CameraComponent = (props) => {
                                 onPress={() => props.setOpenCamera(false)}>
                                 <Text style={{ color: 'white', fontWeight: '500' }}>Cancel Photo</Text>
                             </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{
+                                    backgroundColor: 'rgba(0,0,0,0.2)',
+                                    padding: 10,
+                                    marginTop: 20,
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    borderRadius: 10,
+                                    borderWidth: 2,
+                                    borderColor: '#fff',
+                                    width: 120,
+                                    zIndex: 100
+                                }}
+                                onPress={flipCamera}>
+                                <Text style={{ color: 'white', fontWeight: '500' }}>Flip Camera</Text>
+                            </TouchableOpacity>
                         </View>
 
                         <View style={styles.buttonContainer}>
@@ -117,6 +151,7 @@ const CameraComponent = (props) => {
                                 source={{
                                     uri: `file://'${imgTempURI}`,
                                 }}
+                                alt="Preview Image from Camera"
                             />
                         ) : null}
 
@@ -173,8 +208,20 @@ const styles = StyleSheet.create({
     backButton: {
         backgroundColor: 'rgba(0,0,0,0.0)',
         position: 'absolute',
-        justifyContent: 'center',
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         width: '100%',
+        top: 0,
+        padding: 20,
+    },
+    flipButton: {
+        backgroundColor: 'rgba(0,0,0,0.0)',
+        position: 'absolute',
+        justifyContent: 'flex-end',
+        alignContent: 'flex-end',
+        alignItems: 'flex-end',
+        // width: '100%',
         top: 0,
         padding: 20,
     },

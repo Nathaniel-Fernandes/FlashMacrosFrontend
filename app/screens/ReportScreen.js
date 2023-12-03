@@ -12,6 +12,7 @@ import { defaultColors } from "../../src/styles/styles";
 import { MealContext } from "../../src/context"
 import { useFocusEffect } from "expo-router/src/useFocusEffect";
 import { convertDate, sortMealsByDate, convertMealObjArr, getMostRecentMeals } from "../../src/components/meal";
+import { RotateOutDownRight } from "react-native-reanimated";
 
 const ReportScreen = () => {
     const mealHelpers = useContext(MealContext)
@@ -45,9 +46,9 @@ const ReportScreen = () => {
 
     useEffect(() => {
         setMonthlyMacros({
-            proteins: pastThirtyDayData.map(meal => meal.CMNP.proteins).reduce((a, b) => a + b, 0),
-            fats: pastThirtyDayData.map(meal => meal.CMNP.fats).reduce((a, b) => a + b, 0),
-            carbs: pastThirtyDayData.map(meal => meal.CMNP.carbs).reduce((a, b) => a + b, 0)
+            proteins: pastThirtyDayData.map(meal => meal.CMNP.proteins.mean).reduce((a, b) => a + b, 0),
+            fats: pastThirtyDayData.map(meal => meal.CMNP.fats.mean).reduce((a, b) => a + b, 0),
+            carbs: pastThirtyDayData.map(meal => meal.CMNP.carbs.mean).reduce((a, b) => a + b, 0)
         })
     }, [pastThirtyDayData])
 
@@ -66,7 +67,7 @@ const ReportScreen = () => {
 
             // Assumption: processedData is sorted
             keys = eachDayOfInterval(interval)
-            vals = keys.map(day => sorted.map(meal => isSameDay(meal.date, day) ? meal.CMNP.calories : 0).reduce((a, b) => a + b, 0))
+            vals = keys.map(day => sorted.map(meal => isSameDay(meal.date, day) ? meal.CMNP.calories.mean : 0).reduce((a, b) => a + b, 0))
 
             setChartData(keys.map((key, idx) => { return { label: format(key, 'MM/dd'), value: vals[idx] } }))
         }
@@ -81,7 +82,8 @@ const ReportScreen = () => {
                 height: meal.img.height / (meal.img.width / 50),
                 alignSelf: 'center'
             }}
-        ></Image>, meal.CMNP.calories, meal.CMNP.proteins, meal.CMNP.fats, meal.CMNP.carbs])
+            alt="Image of Meal in Reports Table"
+        ></Image>, `${meal.CMNP.calories.mean} ±${meal.CMNP.calories.CI}`, `${meal.CMNP.proteins.mean} ±${meal.CMNP.proteins.CI}`, `${meal.CMNP.fats.mean} ±${meal.CMNP.fats.CI}`, `${meal.CMNP.carbs.mean} ±${meal.CMNP.carbs.CI}`])
         setTableData(td)
     }, [processedData])
 
@@ -167,15 +169,21 @@ const ReportScreen = () => {
 
                     {
                         !showBarChart ? '' :
+                            <View style={{ display:'flex'}}>
+                            <Text 
+                                // style={{ transform: [{ rotate: '-90deg'}] }}
+                            >Calories</Text>
                             <BarChart
                                 yAxisLabelWidth={38}
                                 yAxisLabelContainerStyle={{
                                     marginRight: 5
                                 }}
+                                y
                                 endSpacing={0}
                                 data={chartData}
                                 width={Dimensions.get('screen').width * 0.78}
                             />
+                            </View>
                     }
 
                     <Text style={{ color: defaultColors.darkGray.color, textAlign: 'center', marginTop: -35 }}>Please swipe left on chart to see more days of data.</Text>

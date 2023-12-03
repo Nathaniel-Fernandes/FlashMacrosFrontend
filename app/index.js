@@ -5,6 +5,8 @@ import { Link, useNavigation } from "expo-router"
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import { LoginButton, Settings } from 'react-native-fbsdk-next';
 
+import * as EmailValidator from 'email-validator'
+
 // local
 import { defaultColors } from '../src/styles/styles';
 
@@ -14,7 +16,7 @@ Settings.initializeSDK();
 const SignInScreen = () => {
     const navigation = useNavigation()
 
-    const [username, setUsername] = useState('')
+    const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
 
     const signInWithGoogle = async () => {
@@ -52,6 +54,7 @@ const SignInScreen = () => {
                             height: 100,
                             borderRadius: 13
                         }}
+                        alt="Flash Macros Logo"
                     />
                     <Text style={{ ...defaultColors.black, fontWeight: 800 }}>Flash Macros</Text>
                 </View>
@@ -63,8 +66,8 @@ const SignInScreen = () => {
                     <View style={{ marginVertical: 20 }}>
                         <Text style={{ ...defaultColors.red, fontWeight: 800 }}>Email</Text>
                         <TextInput
-                            value={username}
-                            onChangeText={setUsername}
+                            value={email}
+                            onChangeText={setEmail}
                             placeholder="Your email address"
                             style={{
                                 color: defaultColors.lightGray,
@@ -74,6 +77,11 @@ const SignInScreen = () => {
                                 borderBottomWidth: 1
                             }}
                         ></TextInput>
+
+                        {
+                            (email != '' && !EmailValidator.validate(email)) ?
+                                < Text style={{ color: defaultColors.red.color }}>Your email seems to be incorrect. Please try again.</Text> : ''
+                        }
                     </View>
 
                     <View>
@@ -98,7 +106,7 @@ const SignInScreen = () => {
                         <Button
                             title="Sign In"
                             color={defaultColors.red.color}
-                            disabled={username.length === 0 || password.length === 0}
+                            disabled={email.length === 0 || password.length === 0 || !EmailValidator.validate(email)}
                         ></Button>
                     </Link>
 
@@ -146,8 +154,8 @@ const SignInScreen = () => {
                         </Link>
                     </View>
                 </View>
-            </ScrollView>
-        </View>
+            </ScrollView >
+        </View >
     )
 }
 

@@ -7,10 +7,22 @@ const DummyMeals = {
       'title': '10/13/2023 6:53 PM',
       'description': 'Atlantic salmon with buttered corn and mashed potatoes',
       'CMNP': {
-          'calories': 768,
-          'proteins': 42,
-          'fats': 31,
-          'carbs': 56
+          'calories': {
+            'mean': 768,
+            'CI': 6
+          },
+          'proteins': {
+            'mean': 42,
+            'CI': 7
+          },
+          'fats': {
+            'mean': 31,
+            'CI': 8
+          },
+          'carbs': {
+            'mean': 56,
+            'CI': 17
+          }
       },
       'tags': ['Salmon', 'Corn', 'Mashed Potatoes'],
       'img': {
@@ -23,10 +35,23 @@ const DummyMeals = {
       'title': '10/13/2023 12:01 PM',
       'description': '',
       'CMNP': {
-          'calories': 431,
-          'proteins': 22,
-          'fats': 16,
-          'carbs': 37
+          'calories': {
+            'mean': 431,
+            'CI': 20
+          },
+          'proteins': {
+            'mean': 22,
+            'CI': 4
+          },
+          'fats': {
+            'mean': 16,
+            'CI': 3
+          },
+
+          'carbs': {
+            'mean': 37,
+            'CI': 6
+          }
         },
       'tags': [],
       'img': {
@@ -40,12 +65,15 @@ const DummyMeals = {
 const DummyProfile = {
   name: 'Johanna Doe',
   email: 'johanna@company.com',
-  heightFeet: '5',
-  heightInches: '5',
+  // heightFeet: '5',
+  heightInches: '65',
   weight: '130',
-  race: 'White',
+  race: 1,
   age: '27',
-  sex: 'F'
+  sex: 2,
+  img: {
+    URI: require('../assets/johanna.png')
+  }
 }
 
 const ProfileContext = createContext({

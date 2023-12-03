@@ -1,30 +1,58 @@
 import React, { useEffect, useState, useContext } from 'react'
-import { Text, View, Image, TextInput, Button, StyleSheet } from 'react-native'
+import { Text, View, TextInput, Button, StyleSheet, Modal, ScrollView } from 'react-native'
+import { Image } from 'expo-image'
 import { defaultColors } from '../../src/styles/styles'
 import { useNavigation } from 'expo-router/';
+import { SelectList } from 'react-native-dropdown-select-list';
 
 // dexcom authentication
 import { makeRedirectUri, useAuthRequest } from 'expo-auth-session';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-import { DexcomAuthContext, ProfileContext } from '../../src/context';
+import { DexcomAuthContext, MealContext, ProfileContext } from '../../src/context';
+import * as MediaLibrary from 'expo-media-library';
+
+import Camera from '../../src/components/camera';
 
 const ProfileScreen = (props) => {
     const navigation = useNavigation()
 
+    const mealHelpers = useContext(MealContext)
     const profileContext = useContext(ProfileContext)
+
+    // profile options
+    const raceOptions = [
+        { key: 0, value: "African American" },
+        { key: 1, value: "White" },
+        { key: 2, value: "Asian" },
+        { key: 3, value: "Hispanic or Latino" },
+        { key: 4, value: "Native American" },
+        { key: 5, value: "Pacific Islander" },
+    ]
+
+    const genderOptions = [
+        { key: 0, value: 'Male' },
+        { key: 1, value: 'Female' },
+        { key: 2, value: 'Prefer Not To Say' }
+    ]
+
+    // camera
+    const [openCamera, setOpenCamera] = useState(false)
+    const [imgTempURI, setImgTempURI] = useState(profileContext.profileData.img.URI)
+    const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
 
     // 0. Profile data, state, helpers
     const [data, setData] = useState(profileContext.profileData)
     const [editable, setEditable] = useState(false)
     const [validInput, setValidInput] = useState(true)
+    const [gdprReq, setGdprReq] = useState(false)
 
     useEffect(() => {
-        setData({...profileContext.profileData})
+        setData({ ...profileContext.profileData })
     }, [profileContext.profileData])
 
     // check if any fields are empty. If so, prevent saving.
     useEffect(() => {
-        if ([data.name, data.email, data.heightFeet, data.heightInches, data.weight, data.race, data.age, data.sex].includes('')) {
+        if ([data.name, data.email, data.heightInches, data.weight, data.race, data.age, data.sex].includes('')) {
             setValidInput(false)
         }
         else {
@@ -32,12 +60,17 @@ const ProfileScreen = (props) => {
         }
     }, [data])
 
+    const requestAllData = () => {
+        // [ECEN 404 TODO]: Make Request to Server to delete GDPR data
+        setGdprReq(true)
+    }
+
     // helper: save the user's input
     const handleChange = (e, type) => {
         const conversion = {
-            'email': 'email',
+            // 'email': 'email',
             'name': 'name',
-            'feet': 'heightFeet',
+            // 'feet': 'heightFeet',
             'inches': 'heightInches',
             'weight': 'weight',
             'race': 'race',
@@ -48,10 +81,30 @@ const ProfileScreen = (props) => {
         setData({ ...data, [conversion[type]]: e })
     }
 
+    console.log('open camera: ', openCamera, editable)
+
     // helper: save the in-memory form fields to on-device local storage
     const saveData = async (userData = null) => {
         if (userData === null) {
-            profileContext.setProfileData({ ...data })
+            if (imgTempURI === '' || imgTempURI === profileContext.profileData.img.URI) {
+                profileContext.setProfileData({ ...data })
+            }
+
+            else {
+                // console.log('saving meal method 2')
+
+                // get media library permission
+                let mediaLibraryPermission = await requestPermission()
+
+                if (mediaLibraryPermission['status'] === 'granted') {
+                    await MediaLibrary.createAssetAsync(imgTempURI).then((asset) => {
+                        profileContext.setProfileData({ ...data, img: { URI: asset.uri } })
+                    })
+                }
+                else {
+                    profileContext.setProfileData({ ...data })
+                }
+            }
         }
         else {
             profileContext.setProfileData({ ...userData })
@@ -93,74 +146,102 @@ const ProfileScreen = (props) => {
         }
     }, [response]);
 
-    // TODO: make it easier to enter text 
+    // TODO: make it easier to enter text
     return (
         <View style={{ backgroundColor: '#FFF', height: '100%' }}>
-            <View style={{ margin: 20 }}>
-                <View style={{ flexDirection: 'row' }}>
-                    <Image
-                        source={require('../../assets/johanna.png')}
-                    ></Image>
+            <ScrollView style={{ margin: 20 }}>
+                <View style={{ flexDirection: 'row' }}
+                >
+                    <TouchableOpacity
+                        onPress={() => { editable ? setOpenCamera(true) : '' }}
+                    >
+                        <Image
+                            source={imgTempURI}
+                            style={{
+                                width: 60,
+                                height: 60,
+                                marginTop: 10,
+                                alignSelf: 'center',
+                                borderRadius: 50
+                            }}
+                            alt="Profile Image"
+                        ></Image>
+                    </TouchableOpacity>
                     <View style={{ marginLeft: 25 }}>
                         <TextInput editable={editable} style={{ fontWeight: 800, fontSize: 18 }} defaultValue={data.name} onChangeText={e => handleChange(e, 'name')}></TextInput>
-                        <TextInput editable={editable} style={{ fontWeight: 900 }} defaultValue={data.email} onChangeText={e => handleChange(e, 'email')}></TextInput>
+                        <TextInput editable={false} style={{ fontWeight: 900 }} defaultValue={data.email} onChangeText={e => handleChange(e, 'email')}></TextInput>
                     </View>
                 </View>
                 <View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                        <View style={{ flexDirection: 'row', marginVertical: 20, justifyContent: 'space-between', width: 100, borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, paddingBottom: 8 }}>
-                            <Text style={{ color: defaultColors.red.color, fontWeight: 800 }}>Height</Text>
+                        <View style={{ flexDirection: 'row', marginVertical: 20, justifyContent: 'space-between', alignItems: 'center', width: 125, borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, paddingBottom: 8 }}>
+                            <Text style={{ color: defaultColors.red.color, fontWeight: 800 }}>Height (in)</Text>
                             <View style={{ flexDirection: 'row' }}>
-                                <TextInput inputMode='numeric' editable={editable} defaultValue={data.heightFeet} onChangeText={e => handleChange(e, 'feet')}></TextInput>
-                                <Text>'</Text>
-                                <TextInput inputMode='numeric' editable={editable} defaultValue={data.heightInches} onChangeText={e => handleChange(e, 'inches')}></TextInput>
-                                <Text>"</Text>
+                                <TextInput style={{width: 50, textAlign: 'right', paddingRight: 3}} inputMode='decimal' editable={editable} defaultValue={data.heightInches} onChangeText={e => handleChange(e, 'inches')}></TextInput>
                             </View>
                         </View>
-                        <View style={{ flexDirection: 'row', marginVertical: 20, justifyContent: 'space-between', width: 100, borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, paddingBottom: 8 }}>
-                            <Text style={{ color: defaultColors.red.color, fontWeight: 800 }}>Weight</Text>
-                            <TextInput inputMode='decimal' editable={editable} defaultValue={data.weight} onChangeText={e => handleChange(e, 'weight')}></TextInput>
+                        <View style={{ flexDirection: 'row', marginVertical: 20, justifyContent: 'space-between', alignItems: 'center', width: 125, borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, paddingBottom: 8 }}>
+                            <Text style={{ color: defaultColors.red.color, fontWeight: 800 }}>Weight (lb)</Text>
+                            <TextInput style={{width: 50, textAlign: 'right', paddingRight: 5}} inputMode='decimal' editable={editable} defaultValue={data.weight} onChangeText={e => handleChange(e, 'weight')}></TextInput>
                         </View>
                     </View>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                        <View style={{ flexDirection: 'row', marginVertical: 20, justifyContent: 'space-between', width: 100, borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, paddingBottom: 8 }}>
-                            <Text style={{ color: editable ? defaultColors.darkGray.color : defaultColors.red.color, fontWeight: 800 }}>BMI</Text>
-                            <Text style={{ color: editable ? defaultColors.darkGray.color : defaultColors.black.color }}>{Math.round(10 * 703 * (Number(data.weight) / (Number(data.heightFeet) * 12 + Number(data.heightInches)) ** 2)) / 10}</Text>
+                        <View style={{ flexDirection: 'row', marginVertical: 20, justifyContent: 'space-between', width: 125, borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, paddingBottom: 8 }}>
+                            <Text style={{ color: editable ? defaultColors.darkGray.color : defaultColors.red.color, fontWeight: 800, marginTop: editable ? 19 : '' }}>BMI</Text>
+                            <Text style={{ color: editable ? defaultColors.darkGray.color : defaultColors.black.color, marginTop: editable ? 18 : '' }}>{Math.round(10 * 703 * (Number(data.weight) / (Number(data.heightInches)) ** 2)) / 10}</Text>
                         </View>
-                        <View style={{ flexDirection: 'row', marginVertical: 20, justifyContent: 'space-between', width: 100, borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, paddingBottom: 8 }}>
-                            <Text style={{ color: defaultColors.red.color, fontWeight: 800 }}>Race</Text>
-                            <TextInput editable={editable} defaultValue={data.race} onChangeText={e => handleChange(e, 'race')}></TextInput>
-                            {/* <RNPickerSelect
-                                onValueChange={(value) => handleChange(value, 'race')}
-                                items={[
-                                    { label: 'American Indian or Alaskan Native', value: 'American Indian or Alaskan Native' },
-                                    { label: 'Asian / Pacific Islander', value: 'Asian / Pacific Islander' },
-                                    { label: 'Black or African American', value: 'Black or African American' },
-                                    { label: 'Hispanic', value: 'Hispanic' },
-                                    { label: 'White / Caucasian', value: 'White / Caucasian' },
-                                    { label: 'Other', value: 'Other' },
-                                ]}
-                            ></RNPickerSelect> */}
+                        <View style={{ flexDirection: 'row', marginVertical: 20, justifyContent: 'space-between', width: 125, borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, paddingBottom: 8 }}>
+                            <Text style={{ color: defaultColors.red.color, fontWeight: 800, marginTop: editable ? 16 : '' }}>Race</Text>
+
+                            {
+                                (editable) ?
+                                    <SelectList
+                                        setSelected={(val) => handleChange(val, 'race')}
+                                        data={raceOptions}
+                                        boxStyles={{
+                                            borderWidth: 0,
+                                        }}
+                                        dropdownStyles={{
+                                            marginHorizontal: 10
+                                        }}
+                                        search={false}
+                                    >
+                                    </SelectList> :
+                                    (data.race !== '') ? <Text style={{ width: 80, textAlign: 'right', paddingRight: 3}} numberOfLines={1}>{raceOptions[Number(data.race)]?.value}</Text> : ''
+                            }
                         </View>
                     </View>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                        <View style={{ flexDirection: 'row', marginVertical: 20, justifyContent: 'space-between', width: 100, borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, paddingBottom: 8 }}>
-                            <Text style={{ color: defaultColors.red.color, fontWeight: 800 }}>Age</Text>
-                            <TextInput inputMode='decimal' editable={editable} defaultValue={data.age} onChangeText={e => handleChange(e, 'age')}></TextInput>
+                        <View style={{ flexDirection: 'row', marginVertical: 20, justifyContent: 'space-between', width: 125, borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, paddingBottom: 8 }}>
+                            <Text style={{ color: defaultColors.red.color, fontWeight: 800, marginTop: editable ? 16 : '' }}>Age</Text>
+                            <TextInput
+                                inputMode='decimal'
+                                style={{alignSelf: 'baseline', marginTop: editable ? 16 : '', width: 50, textAlign: 'right', paddingRight: 3}}
+                                editable={editable}
+                                defaultValue={data.age}
+                                onChangeText={e => handleChange(e, 'age')}
+                            ></TextInput>
                         </View>
-                        <View style={{ flexDirection: 'row', marginVertical: 20, justifyContent: 'space-between', width: 100, borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, paddingBottom: 8 }}>
-                            <Text style={{ color: defaultColors.red.color, fontWeight: 800 }}>Sex</Text>
-                            <TextInput styles={{ width: '100%', backgroundColor: 'black' }} editable={editable} defaultValue={data.sex} onChangeText={e => handleChange(e, 'sex')}></TextInput>
-                            {/* <RNPickerSelect
-                                onValueChange={(value) => handleChange(value, 'sex')}
-                                items={[
-                                    { label: 'Male', value: 'M' },
-                                    { label: 'Female', value: 'F' },
-                                    { label: 'Prefer Not To Say', value: 'N/A' },
-                                ]}
-                            ></RNPickerSelect> */}
+                        <View style={{ flexDirection: 'row', marginVertical: 20, justifyContent: 'space-between', width: 125, borderBottomColor: defaultColors.darkGray.color, borderBottomWidth: 1, paddingBottom: 8 }}>
+                            <Text style={{ color: defaultColors.red.color, fontWeight: 800, marginTop: editable ? 15 : '' }}>Sex</Text>
+                            {(editable) ?
+                                <SelectList
+                                    setSelected={(val) => handleChange(val, 'sex')}
+                                    data={genderOptions}
+                                    boxStyles={{
+                                        borderWidth: 0,
+                                    }}
+                                    dropdownStyles={{
+                                        marginHorizontal: 10
+                                    }}
+                                    search={false}
+                                    defaultValue
+                                >
+                                </SelectList> :
+                                (data.sex !== '') ? <Text style={{ width: 80}} numberOfLines={1}>{genderOptions[Number(data.sex)]?.value}</Text> : ''
+                            }
                         </View>
                     </View>
 
@@ -170,30 +251,95 @@ const ProfileScreen = (props) => {
                         ''
                     }
                 </View>
-                <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-evenly', marginVertical: 10}}>
+                <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-evenly', marginVertical: 15 }}>
                     {
                         (editable) ?
-                            <Button
-                                title="Save?"
-                                color={validInput ? defaultColors.blue.color : defaultColors.lightGray.color}
-                                disabled={!validInput}
+                            <TouchableOpacity
                                 onPress={() => { setEditable(false); saveData() }}
-                            ></Button>
-                            : <Button
-                                title="Edit Profile?"
-                                color={defaultColors.blue.color}
-                                onPress={() => setEditable(true)}
-                            ></Button>
+                                disabled={!validInput}
+                                
+                            >
+                                <Text
+                                    style={{
+                                        color: validInput ? defaultColors.blue.color : defaultColors.lightGray.color,
+                                        fontWeight: 800,
+                                        fontSize: 15,
+                                        margin: 0,
+                                        padding: 0
+                                    }}
+                                
+                                >Save?</Text>
+                            </TouchableOpacity>
+                            : <TouchableOpacity
+                            onPress={() => setEditable(true)}
+                            
+                            >
+                                <Text
+                                    style={{
+                                        fontWeight: 800,
+                                        fontSize: 16,
+                                        color: defaultColors.blue.color
+                                    }}
+                                >Edit Profile?</Text>
+                            </TouchableOpacity> 
                     }
-
-                    <Button
-                        title="Delete Profile"
-                        color={defaultColors.red.color}
-                        onPress={() => { profileContext.resetProfile(), navigation.navigate('screens/SignUpScreen')}}
-                    ></Button>
+                    <TouchableOpacity
+                       
+                        onPress={() => navigation.navigate('index') }
+                    >
+                        <Text  style={{
+                            fontWeight: 800,
+                            color: defaultColors.green.color,
+                            fontSize: 16,
+                        }}>Logout</Text>
+                    </TouchableOpacity>
                 </View>
 
-                <View style={{ borderBottomColor: defaultColors.black.color, borderBottomWidth: StyleSheet.hairlineWidth, marginVertical: 20}}></View>
+                <View style={{ borderBottomColor: defaultColors.black.color, borderBottomWidth: StyleSheet.hairlineWidth, marginVertical: 20 }}></View>
+                <View>
+                    <Text style={{ fontWeight: 800 }}>Privacy Compliance</Text>
+                    <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: defaultColors.black.color,
+                                padding: 10,
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                borderRadius: 10,
+                                borderWidth: 2,
+                                marginTop: 10,
+                                borderColor: defaultColors.black.color,
+                            }}
+                            onPress={requestAllData}
+                        >
+                            <Text style={{ color: defaultColors.white.color, fontWeight: '800' }}>
+                                Request All Data
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: '#dc3545',
+                                padding: 10,
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                borderRadius: 10,
+                                borderWidth: 2,
+                                marginTop: 10,
+                                borderColor: '#dc3545',
+                            }}
+                            onPress={async () => { profileContext.resetProfile(), mealHelpers.deleteMeal({}), dexcomAuthHelpers.setAuthCode(''), dexcomAuthHelpers.setAccessToken(''), navigation.navigate('screens/SignUpScreen') }}
+                        >
+                            <Text style={{ color: defaultColors.white.color, fontWeight: '800' }}>
+                                Delete Profile & All Data
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {(gdprReq) ? '' :
+                        <Text style={{ marginTop: 10 }}>You will receive an email with all the data we have on file shortly.</Text>}
+                </View>
+                <View style={{ borderBottomColor: defaultColors.black.color, borderBottomWidth: StyleSheet.hairlineWidth, marginVertical: 20 }}></View>
 
                 <View style={{ marginVertical: 10, borderBottomColor: defaultColors.darkGray.color, paddingBottom: 8 }}>
                     <Text style={{ color: defaultColors.red.color, fontWeight: 800, paddingBottom: 10, textAlign: 'center' }}>DexCom API Key</Text>
@@ -213,7 +359,7 @@ const ProfileScreen = (props) => {
                                 disabled={!request}
                                 onPress={promptAsync}
                             >
-                                <Text style={{ color: defaultColors.white.color, fontWeight: '800' }}>
+                                <Text style={{ color: defaultColors.white.color, fontWeight: '800', fontSize: 15 }}>
                                     Authorize Dexcom Data
                                 </Text>
                             </TouchableOpacity>
@@ -230,7 +376,7 @@ const ProfileScreen = (props) => {
                                 }}
                                 onPress={dexcomAuthHelpers.revokeAuthorization}
                             >
-                                <Text style={{ color: defaultColors.white.color, fontWeight: '800' }}>
+                                <Text style={{ color: defaultColors.white.color, fontWeight: '800', fontSize: 15 }}>
                                     Revoke Dexcom Authorization
                                 </Text>
                             </TouchableOpacity>
@@ -240,7 +386,15 @@ const ProfileScreen = (props) => {
                             <Text style={{ color: defaultColors.red.color, marginTop: 10 }}>Authorization denied. Please try again to connect Dexcom account.</Text> : ''
                     }
                 </View>
-            </View>
+            </ScrollView>
+
+            {
+                openCamera ?
+                    <Modal>
+                        <Camera setOpenCamera={setOpenCamera} setImgTempURI={setImgTempURI} />
+                    </Modal>
+                    : ''
+            }
         </View>
     )
 }

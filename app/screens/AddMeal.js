@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import { Text, View, Modal, TextInput, Button, ScrollView, ActivityIndicator } from 'react-native';
 import Modal2 from "react-native-modal";
 import { defaultColors } from '../../src/styles/styles';
@@ -6,8 +6,9 @@ import { useNavigation } from 'expo-router';
 import { Image } from 'expo-image'
 import { MealContext } from '../../src/context';
 import { format } from 'date-fns'
-import Camera from '../../src/components/camera';
+import CameraComponent from '../../src/components/camera';
 import * as MediaLibrary from 'expo-media-library';
+import { Camera } from 'react-native-vision-camera'
 
 const AddMealModal = () => {
     const navigation = useNavigation()
@@ -22,6 +23,18 @@ const AddMealModal = () => {
     const [imgTempURI, setImgTempURI] = useState('')
 
     const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
+
+    // 2. Get user's permission to use the Camera + Media Library
+    const [cameraPermission, setCameraPermission] = useState('')
+
+    // Ask for permissions 1x on component start up
+    useEffect(() => {
+        (async () => {
+            setCameraPermission(await Camera.getCameraPermissionStatus())
+        })()
+    }, [])
+
+    console.log('camera perm:', cameraPermission)
 
     const closeModal = async (timeout = 1000) => {
         setIsLoading(true)
@@ -46,10 +59,22 @@ const AddMealModal = () => {
                     'title': format(new Date(), 'MM/dd/yyyy p'),
                     'description': mealDescription,
                     'CMNP': {
-                        'calories': Math.round(500 * (1 + Math.random())),
-                        'proteins': Math.round(100 * (0.5 + Math.random())),
-                        'fats': Math.round(20 * (1 + Math.random())),
-                        'carbs': Math.round(50 * (1 + Math.random()))
+                        'calories': {
+                            'mean': Math.round(500 * (1 + Math.random())),
+                            'CI': Math.round(25 * (1 + Math.random())),
+                        },
+                        'proteins': {
+                            'mean': Math.round(100 * (0.5 + Math.random())),
+                            'CI': Math.round(10 * (0.5 + Math.random())),
+                        },
+                        'fats': {
+                            'mean': Math.round(20 * (1 + Math.random())),
+                            'CI': Math.round(5 * (1 + Math.random()))
+                        },
+                        'carbs': {
+                            'mean': Math.round(50 * (1 + Math.random())),
+                            'CI': Math.round(10 * (1 + Math.random())),
+                        }
                     },
                     'tags': mealTags.split(','),
                     'img': {
@@ -59,9 +84,12 @@ const AddMealModal = () => {
                     }
                 }
                 mealHelpers.addMeal(mealObj)
+                closeModal()
             })
         }
     }
+
+    console.log(permissionResponse)
 
     return (
         // TODO: add screen transition animations by making this a modal in the MealScreen
@@ -104,13 +132,23 @@ const AddMealModal = () => {
                 {
                     openCamera ?
                         <Modal>
-                            <Camera setOpenCamera={setOpenCamera} setImgTempURI={setImgTempURI} />
+                            <CameraComponent setOpenCamera={setOpenCamera} setImgTempURI={setImgTempURI} />
                         </Modal>
                         : <Button
                             title={(imgTempURI === '') ? "Add Photo" : "Retake photo"}
                             color={defaultColors.blue.color}
                             onPress={() => setOpenCamera(true)}
+                            disabled={cameraPermission != 'granted'}
                         ></Button>
+                }
+                {
+                    (cameraPermission == 'granted') ? '' : 
+                        <Text style={{ color: defaultColors.red.color, margin: 15, fontSize: 14, }}>Camera permissions denied. Please open settings & enable "Camera Permissions" for FlashMacros.</Text>
+                }
+
+                {
+                    (permissionResponse?.granted) ? '' : 
+                        <Text style={{ color: defaultColors.red.color, margin: 15, fontSize: 14, }}>Media Library permissions denied. Please open settings & enable "Photo Permissions" for FlashMacros to save your photos.</Text>
                 }
 
                 {
@@ -124,6 +162,7 @@ const AddMealModal = () => {
                                 marginTop: 10,
                                 alignSelf: 'center'
                             }}
+                            alt="Image Preview"
                         />
                 }
 
@@ -131,7 +170,7 @@ const AddMealModal = () => {
                     <Button
                         title="Save"
                         color={defaultColors.blue.color}
-                        onPress={() => { saveMeal(), closeModal() }} // TODO: save modal data
+                        onPress={saveMeal} // TODO: save modal data
                         disabled={imgTempURI === ''}
                     ></Button>
                     <Button

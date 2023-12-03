@@ -5,18 +5,22 @@ import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { Link } from "expo-router";
 import PasswordValidate, { VALIDATION_RULES_KEYS } from 'react-native-password-validate-checklist';
 
+import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
+import * as EmailValidator from 'email-validator'
+
+
 // local files
 import { defaultColors } from '../../src/styles/styles';
 
 const SignUpScreen = () => {
-    const [username, setUsername] = useState('')
+    const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
 
     const [isValid, setIsValid] = useState(false)
     const [agreed, setAgreed] = useState(false)
 
     const rules = [
-        { key: VALIDATION_RULES_KEYS.MIN_LENGTH, ruleValue: 10, label: 'Should contain more than 6 letter characters' },
+        { key: VALIDATION_RULES_KEYS.MIN_LENGTH, ruleValue: 6, label: 'Should contain more than 6 characters' },
         { key: VALIDATION_RULES_KEYS.MAX_LENGTH, ruleValue: 15, label: 'Should contain less than 12 letter characters' },
         { key: VALIDATION_RULES_KEYS.LOWERCASE_LETTER },
         { key: VALIDATION_RULES_KEYS.UPPERCASE_LETTER },
@@ -39,6 +43,7 @@ const SignUpScreen = () => {
                             height: 100,
                             borderRadius: 13
                         }}
+                        alt="Flash Macros Logo"
                     />
                     <Text style={{ ...defaultColors.black, fontWeight: 800 }}>Flash Macros</Text>
                 </View>
@@ -48,8 +53,8 @@ const SignUpScreen = () => {
                 <View style={{ marginVertical: 20 }}>
                     <Text style={{ ...defaultColors.red, fontWeight: 800 }}>Email</Text>
                     <TextInput
-                        value={username}
-                        onChangeText={setUsername}
+                        value={email}
+                        onChangeText={setEmail}
                         placeholder="Your email address"
                         style={{
                             color: defaultColors.lightGray,
@@ -59,6 +64,10 @@ const SignUpScreen = () => {
                             borderBottomWidth: 1
                         }}
                     ></TextInput>
+                    {
+                        (email != '' && !EmailValidator.validate(email)) ?
+                            < Text style={{ color: defaultColors.red.color }}>Your email seems to be incorrect. Please check again.</Text> : ''
+                    }
                 </View>
 
                 <View>
@@ -107,7 +116,7 @@ const SignUpScreen = () => {
                     <Button
                         title="Continue"
                         color={defaultColors.red.color}
-                        disabled={!agreed || !isValid}
+                        disabled={!agreed || !isValid || !EmailValidator.validate(email)}
                     ></Button>
                 </Link>
 

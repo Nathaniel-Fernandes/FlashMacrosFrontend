@@ -56,25 +56,8 @@ const DataScreen = () => {
     const [showTable, setShowTable] = useState(false)
 
     useFocusEffect(useCallback(() => {
-        if (plottingData.length > 5) {
-            // console.log(plottingData)
-            setShowLineChart(true)
-        }
-        else {
-            setTimeout(() => {
-                setShowLineChart(false)
-            }, 2000)
-        }
-
-        if (viomeData.length > 5) {
-            // console.log(plottingData)
-            setShowTable(true)
-        }
-        else {
-            setTimeout(() => {
-                setShowTable(false)
-            }, 2000)
-        }
+        setShowLineChart(true)
+        setShowTable(true)
 
         return () => {
             setShowLineChart(false)
@@ -160,7 +143,8 @@ const DataScreen = () => {
 
         if (!!egv?.records) {
             const data = egv.records.map((x, i) => {
-                // console.log('time: ', x.displayTime, parse(x.displayTime, "yyyy-MM-dd'T'HH:mm:ss", new Date()))
+                // console.log('hi', i, x)
+                // console.log('time: ', x.displayTime, 'wat', parse(x.displayTime, "yyyy-MM-dd'T'HH:mm:ss", new Date()))
 
                 if ((i % 5) == 0) {
                     return {
@@ -191,8 +175,8 @@ const DataScreen = () => {
             console.log('the access token we are using', new Date(), dexcomAuthHelpers.accessToken)
 
             const query = new URLSearchParams({
-                startDate: format(subDays(new Date(), 2), "yyyy-MM-dd'T'hh:mm:ss"),
-                endDate: format(new Date(), "yyyy-MM-dd'T'hh:mm:ss")
+                startDate: format(subDays(new Date(), 6), "yyyy-MM-dd'T'hh:mm:ss"),
+                endDate: format(subDays(new Date(), 4), "yyyy-MM-dd'T'hh:mm:ss")
             }).toString();
 
             fetch(`https://sandbox-api.dexcom.com/v3/users/self/egvs?${query}`, {
@@ -210,15 +194,16 @@ const DataScreen = () => {
                         // console.log('plot data len: ', plottingData.length)
                         if (plottingData.length < 10) {
                             // console.log('i am running')
-                            // setIsLoading(true)
+                            setIsLoading(true)
                         }
+                        // console.log('data: ', data)
                         setEGV(data)
                     }
                 })
                 .catch(async (err) => {
                     // The Dexcom API guarantees data queries will always return 200 OK responses
                     // Thus, if an error is returned, it's likely b/c the access token is expired so try to refresh
-                    // console.log('errrr', err)
+                    console.log(err)
                     dexcomAuthHelpers.refreshAccessToken()
                 })
         }
@@ -233,8 +218,9 @@ const DataScreen = () => {
                 <Text style={{ color: defaultColors.black.color, fontWeight: 800, paddingBottom: 10, textAlign: 'center' }}>Continuous Glucose Monitoring Data</Text>
 
                 {
-                    !showLineChart ? '' :
+                    (!showLineChart || plottingData.length < 5) ? '' :
                         <>
+                            <Text>Blood Glucose (mg/dL)</Text>
                             <LineChart
                                 yAxisLabelWidth={38}
                                 yAxisLabelContainerStyle={{
@@ -308,7 +294,7 @@ const DataScreen = () => {
                     !(viomeFileError === false && viomeData.length > 0) ? '' :
                         <View style={{ marginVertical: 30 }}>
                             {
-                                !showTable ? '' :
+                                (!showTable || viomeData.length === 0) ? '' :
                                     <FlatList
                                         data={viomeData}
                                         renderItem={({ item, index }) => <Row data={item} index={index} />}

@@ -150,6 +150,7 @@ export default function Layout() {
     // Load in meals from the on-device local storage, one time on component start up
     useEffect(() => {
         const fetchData = async () => {
+            throw new Error()
             const data = await AsyncStorage.getItem('FlashMacrosMealsData')
 
             if (data == null) {
@@ -233,7 +234,11 @@ export default function Layout() {
                 revokeAuthorization,
                 refreshAccessToken
             }}>
-                <ProfileContext.Provider value={{ profileData, setProfileData, resetProfile }}>
+                <ProfileContext.Provider value={{ 
+                    profileData, 
+                    setProfileData, 
+                    resetProfile }}
+                >
                     <Drawer screenOptions={{
                         headerTintColor: defaultColors.red.color,
                     }}>

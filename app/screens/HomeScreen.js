@@ -129,6 +129,7 @@ const HomeScreen = () => {
                                 marginTop: 10,
                                 borderRadius: 10
                             }}
+                            alt="The last Meal You Ate Image"
                         ></Image>
                     </View>
                 }
