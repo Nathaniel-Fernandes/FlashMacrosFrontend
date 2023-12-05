@@ -1,6 +1,6 @@
 import React, { memo, useContext } from "react"
 import { Image } from 'expo-image'
-import { FlatList, View, Text } from "react-native";
+import { FlatList, View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { defaultColors } from "../styles/styles";
@@ -91,8 +91,93 @@ const Meal = (props) => {
                     alt="Image for Meal"
                 ></Image>
             }
+
+            {/* <View style={styles.buttonContainer}> */}
+                <View style={{
+                    ...styles.buttons,
+                    marginTop: 15
+                }}>
+                    <TouchableOpacity
+                        style={{
+                            backgroundColor: defaultColors.blue.color,
+                            padding: 10,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            borderRadius: 10,
+                            borderWidth: 2,
+                            borderColor: defaultColors.blue.color,
+                        }}
+                        onPress={() => console.log('ECEN404 TODO: Send Message to Seerver')}>
+
+                        <Text style={{ color: defaultColors.white.color, fontWeight: '800' }}>
+                            Start Calorie & Macronutrient Prediction
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            {/* </View> */}
         </View>
     )
 }
+
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    button: {
+        backgroundColor: 'gray',
+    },
+    backButton: {
+        backgroundColor: 'rgba(0,0,0,0.0)',
+        position: 'absolute',
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        top: 0,
+        padding: 20,
+    },
+    flipButton: {
+        backgroundColor: 'rgba(0,0,0,0.0)',
+        position: 'absolute',
+        justifyContent: 'flex-end',
+        alignContent: 'flex-end',
+        alignItems: 'flex-end',
+        // width: '100%',
+        top: 0,
+        padding: 20,
+    },
+    buttonContainer: {
+        backgroundColor: 'rgba(0,0,0,0.2)',
+        position: 'absolute',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
+        bottom: 0,
+        padding: 20,
+    },
+    buttons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    camButton: {
+        height: 80,
+        width: 80,
+        borderRadius: 40,
+        backgroundColor: '#B2BEB5',
+
+        alignSelf: 'center',
+        borderWidth: 4,
+        borderColor: 'white',
+    },
+    image: {
+        width: '100%',
+        height: '100%',
+        aspectRatio: 9 / 16,
+    },
+});
 
 export { Meal, convertDate, sortMealsByDate, convertMealObjArr, getMostRecentMeals }

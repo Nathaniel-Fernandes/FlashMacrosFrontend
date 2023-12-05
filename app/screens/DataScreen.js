@@ -104,8 +104,15 @@ const DataScreen = () => {
                         let data = await readAsStringAsync(doc.assets[0].uri)
 
                         let parsed = data.split('\n').map(row => row.split(','))
-                        setViomeData(parsed)
-                        setViomeFileError(false)
+                        
+                        if (parsed.some(e => e.length != 3)) {
+                            // there is an error - this is not a valid Viome CSV
+                            setViomeFileError('wrong-csv')
+                        }
+                        else {
+                            setViomeData(parsed)
+                            setViomeFileError(false)
+                        }
                     }
                     else {
                         setViomeFileError('not-a-csv')
@@ -281,6 +288,10 @@ const DataScreen = () => {
                                 Delete Viome Data
                             </Text>
                         </TouchableOpacity>
+                }
+                {
+                    (viomeFileError === 'wrong-csv') ?
+                        <Text style={{ color: defaultColors.red.color, marginTop: 10, fontSize: 18 }}>Uploaded CSV does not seem to have right columns. Please try again :)</Text> : ''
                 }
                 {
                     (viomeFileError === 'not-a-csv') ?
